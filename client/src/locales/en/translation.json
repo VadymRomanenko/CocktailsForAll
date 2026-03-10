@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "favorites": "Favorites",
+    "admin": "Admin",
+    "login": "Log in",
+    "profile": "Profile",
+    "register": "Register",
+    "logout": "Log out",
+    "addCocktail": "Add Cocktail"
+  },
+  "home": {
+    "title": "Cocktail Hub"
+  },
+  "search": {
+    "title": "Search Cocktails",
+    "placeholder": "Search ingredients..."
+  },
+  "cocktail": {
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "pendingModeration": "Pending moderation"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": "No favorites yet.",
+    "loginPrompt": "Log in to see your favorites."
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?"
+  },
+  "profile": {
+    "title": "Profile",
+    "role": "Role"
+  },
+  "create": {
+    "title": "Add Cocktail",
+    "name": "Name",
+    "description": "Description (optional)",
+    "instructions": "Instructions",
+    "imageUrl": "Image URL (optional)",
+    "country": "Country",
+    "ingredients": "Ingredients",
+    "ingredientsHint": "Select ingredients from autocomplete. Your recipe will be reviewed by admin.",
+    "submit": "Submit for moderation",
+    "loginRequired": "Please log in to add a cocktail."
+  },
+  "admin": {
+    "title": "Moderation",
+    "approve": "Approve",
+    "noPending": "No pending cocktails.",
+    "accessDenied": "Access denied."
+  },
+  "common": {
+    "allCountries": "All countries",
+    "loading": "Loading...",
+    "prev": "Prev",
+    "next": "Next"
+  }
+}

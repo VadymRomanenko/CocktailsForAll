@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Strona główna",
+    "search": "Szukaj",
+    "favorites": "Ulubione",
+    "admin": "Admin",
+    "login": "Zaloguj",
+    "profile": "Profil",
+    "register": "Rejestracja",
+    "logout": "Wyloguj",
+    "addCocktail": "Dodaj koktajl"
+  },
+  "home": {
+    "title": "Cocktail Hub"
+  },
+  "search": {
+    "title": "Szukaj koktajli",
+    "placeholder": "Szukaj składników..."
+  },
+  "cocktail": {
+    "ingredients": "Składniki",
+    "instructions": "Sposób przyrządzenia",
+    "addToFavorites": "Dodaj do ulubionych",
+    "removeFromFavorites": "Usuń z ulubionych",
+    "pendingModeration": "Oczekuje na moderację"
+  },
+  "favorites": {
+    "title": "Ulubione",
+    "empty": "Brak ulubionych.",
+    "loginPrompt": "Zaloguj się, aby zobaczyć ulubione."
+  },
+  "auth": {
+    "login": "Zaloguj",
+    "register": "Rejestracja",
+    "email": "Email",
+    "password": "Hasło",
+    "noAccount": "Nie masz konta?",
+    "haveAccount": "Masz już konto?"
+  },
+  "profile": {
+    "title": "Profil",
+    "role": "Rola"
+  },
+  "create": {
+    "title": "Dodaj koktajl",
+    "name": "Nazwa",
+    "description": "Opis (opcjonalnie)",
+    "instructions": "Sposób przyrządzenia",
+    "imageUrl": "URL obrazka (opcjonalnie)",
+    "country": "Kraj",
+    "ingredients": "Składniki",
+    "ingredientsHint": "Wybierz składniki z autouzupełniania. Przepis będzie sprawdzony przez admina.",
+    "submit": "Wyślij do moderacji",
+    "loginRequired": "Zaloguj się, aby dodać koktajl."
+  },
+  "admin": {
+    "title": "Moderacja",
+    "approve": "Zatwierdź",
+    "noPending": "Brak koktajli do moderacji.",
+    "accessDenied": "Dostęp zabroniony."
+  },
+  "common": {
+    "allCountries": "Wszystkie kraje",
+    "loading": "Ładowanie...",
+    "prev": "Wstecz",
+    "next": "Dalej"
+  }
+}

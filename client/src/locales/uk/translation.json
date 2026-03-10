@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Головна",
+    "search": "Пошук",
+    "favorites": "Обране",
+    "admin": "Адмін",
+    "login": "Увійти",
+    "profile": "Профіль",
+    "register": "Реєстрація",
+    "logout": "Вийти",
+    "addCocktail": "Додати коктейль"
+  },
+  "home": {
+    "title": "Cocktail Hub"
+  },
+  "search": {
+    "title": "Пошук коктейлів",
+    "placeholder": "Пошук інгредієнтів..."
+  },
+  "cocktail": {
+    "ingredients": "Інгредієнти",
+    "instructions": "Спосіб приготування",
+    "addToFavorites": "Додати в обране",
+    "removeFromFavorites": "Видалити з обраного",
+    "pendingModeration": "На модерації"
+  },
+  "favorites": {
+    "title": "Обране",
+    "empty": "Ще немає обраного.",
+    "loginPrompt": "Увійдіть, щоб переглянути обране."
+  },
+  "auth": {
+    "login": "Увійти",
+    "register": "Реєстрація",
+    "email": "Email",
+    "password": "Пароль",
+    "noAccount": "Немає облікового запису?",
+    "haveAccount": "Вже є обліковий запис?"
+  },
+  "profile": {
+    "title": "Профіль",
+    "role": "Роль"
+  },
+  "create": {
+    "title": "Додати коктейль",
+    "name": "Назва",
+    "description": "Опис (опційно)",
+    "instructions": "Спосіб приготування",
+    "imageUrl": "URL зображення (опційно)",
+    "country": "Країна",
+    "ingredients": "Інгредієнти",
+    "ingredientsHint": "Оберіть інгредієнти з автозаповнення. Рецепт буде на модерації.",
+    "submit": "Надіслати на модерацію",
+    "loginRequired": "Увійдіть, щоб додати коктейль."
+  },
+  "admin": {
+    "title": "Модерація",
+    "approve": "Схвалити",
+    "noPending": "Немає коктейлів на модерацію.",
+    "accessDenied": "Доступ заборонено."
+  },
+  "common": {
+    "allCountries": "Усі країни",
+    "loading": "Завантаження...",
+    "prev": "Назад",
+    "next": "Далі"
+  }
+}
