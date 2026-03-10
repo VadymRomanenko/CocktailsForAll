@@ -1,0 +1,12 @@
+namespace CocktailHub.Core.Entities;
+
+public class CocktailTranslation
+{
+    public int CocktailId { get; set; }
+    public string LangCode { get; set; } = string.Empty; // uk, en, pl
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Instructions { get; set; } = string.Empty;
+
+    public Cocktail Cocktail { get; set; } = null!;
+}

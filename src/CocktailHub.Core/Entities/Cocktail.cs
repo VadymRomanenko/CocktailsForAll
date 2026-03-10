@@ -15,4 +15,5 @@ public class Cocktail
     public User? CreatedByUser { get; set; }
     public ICollection<CocktailIngredient> CocktailIngredients { get; set; } = new List<CocktailIngredient>();
     public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public ICollection<CocktailTranslation> Translations { get; set; } = new List<CocktailTranslation>();
 }

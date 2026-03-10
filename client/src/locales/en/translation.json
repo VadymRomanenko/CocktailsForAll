@@ -15,7 +15,11 @@
   },
   "search": {
     "title": "Search Cocktails",
-    "placeholder": "Search ingredients..."
+    "nameLabel": "By cocktail name",
+    "namePlaceholder": "Enter cocktail name...",
+    "ingredientsLabel": "By ingredients",
+    "placeholder": "Search ingredients...",
+    "matchAllIngredients": "Must contain ALL selected ingredients"
   },
   "cocktail": {
     "ingredients": "Ingredients",

@@ -16,6 +16,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpClient<TheCocktailDbClient>();
+builder.Services.AddHttpClient<TranslationService>();
 builder.Services.AddScoped<CocktailDbSeeder>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddFluentValidationAutoValidation();

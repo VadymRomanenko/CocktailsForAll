@@ -15,7 +15,11 @@
   },
   "search": {
     "title": "Пошук коктейлів",
-    "placeholder": "Пошук інгредієнтів..."
+    "nameLabel": "За назвою коктейля",
+    "namePlaceholder": "Введіть назву коктейля...",
+    "ingredientsLabel": "За інгредієнтами",
+    "placeholder": "Пошук інгредієнтів...",
+    "matchAllIngredients": "Повинен містити ВСІ обрані інгредієнти"
   },
   "cocktail": {
     "ingredients": "Інгредієнти",

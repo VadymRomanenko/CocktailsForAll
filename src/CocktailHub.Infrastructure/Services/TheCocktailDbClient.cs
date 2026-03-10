@@ -22,6 +22,32 @@ public class TheCocktailDbClient
         return JsonSerializer.Deserialize<IngredientsListResponse>(json);
     }
 
+    public async Task<CategoriesListResponse?> GetCategoriesListAsync(CancellationToken ct = default)
+    {
+        var response = await _httpClient.GetAsync("list.php?c=list", ct);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<CategoriesListResponse>(json);
+    }
+
+    public async Task<DrinksListResponse?> FilterByCategoryAsync(string category, CancellationToken ct = default)
+    {
+        var encoded = category.Replace(" ", "_").Replace("/", "_");
+        var response = await _httpClient.GetAsync($"filter.php?c={encoded}", ct);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<DrinksListResponse>(json);
+    }
+
+    public async Task<DrinksListResponse?> FilterByIngredientAsync(string ingredient, CancellationToken ct = default)
+    {
+        var encoded = Uri.EscapeDataString(ingredient);
+        var response = await _httpClient.GetAsync($"filter.php?i={encoded}", ct);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<DrinksListResponse>(json);
+    }
+
     public async Task<DrinksListResponse?> SearchByFirstLetterAsync(char letter, CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync($"search.php?f={letter}", ct);
@@ -56,6 +82,18 @@ public class IngredientItem
 {
     [JsonPropertyName("strIngredient1")]
     public string? StrIngredient1 { get; set; }
+}
+
+public class CategoriesListResponse
+{
+    [JsonPropertyName("drinks")]
+    public List<CategoryItem>? Drinks { get; set; }
+}
+
+public class CategoryItem
+{
+    [JsonPropertyName("strCategory")]
+    public string? StrCategory { get; set; }
 }
 
 public class DrinksListResponse

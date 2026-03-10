@@ -15,7 +15,11 @@
   },
   "search": {
     "title": "Szukaj koktajli",
-    "placeholder": "Szukaj składników..."
+    "nameLabel": "Według nazwy koktajlu",
+    "namePlaceholder": "Wpisz nazwę koktajlu...",
+    "ingredientsLabel": "Według składników",
+    "placeholder": "Szukaj składników...",
+    "matchAllIngredients": "Musi zawierać WSZYSTKIE wybrane składniki"
   },
   "cocktail": {
     "ingredients": "Składniki",

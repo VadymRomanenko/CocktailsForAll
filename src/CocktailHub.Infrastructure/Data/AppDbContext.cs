@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<Cocktail> Cocktails => Set<Cocktail>();
     public DbSet<CocktailIngredient> CocktailIngredients => Set<CocktailIngredient>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<CocktailTranslation> CocktailTranslations => Set<CocktailTranslation>();
+    public DbSet<IngredientTranslation> IngredientTranslations => Set<IngredientTranslation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +68,22 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Cocktail)
                 .WithMany(c => c.Favorites)
                 .HasForeignKey(e => e.CocktailId);
+        });
+
+        modelBuilder.Entity<CocktailTranslation>(entity =>
+        {
+            entity.HasKey(e => new { e.CocktailId, e.LangCode });
+            entity.HasOne(e => e.Cocktail)
+                .WithMany(c => c.Translations)
+                .HasForeignKey(e => e.CocktailId);
+        });
+
+        modelBuilder.Entity<IngredientTranslation>(entity =>
+        {
+            entity.HasKey(e => new { e.IngredientId, e.LangCode });
+            entity.HasOne(e => e.Ingredient)
+                .WithMany(i => i.Translations)
+                .HasForeignKey(e => e.IngredientId);
         });
 
         SeedData(modelBuilder);

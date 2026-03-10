@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { Country } from '../../api/countries';
 
 export function HomePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [cocktails, setCocktails] = useState<Awaited<ReturnType<typeof fetchCocktails>> | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [countryId, setCountryId] = useState<number | ''>('');
@@ -30,10 +30,11 @@ export function HomePage() {
   useEffect(() => {
     fetchCocktails({
       countryId: countryId || undefined,
+      lang: i18n.language,
       page,
       pageSize: 12,
     }).then(setCocktails);
-  }, [countryId, page]);
+  }, [countryId, page, i18n.language]);
 
   const toggleFavorite = async (id: number) => {
     if (!isAuthenticated) return;

@@ -6,4 +6,5 @@ public class Ingredient
     public string Name { get; set; } = string.Empty;
 
     public ICollection<CocktailIngredient> CocktailIngredients { get; set; } = new List<CocktailIngredient>();
+    public ICollection<IngredientTranslation> Translations { get; set; } = new List<IngredientTranslation>();
 }

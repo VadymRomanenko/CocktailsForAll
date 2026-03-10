@@ -23,25 +23,41 @@ public class CocktailsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetList(
+        [FromQuery] string? name,
         [FromQuery] int? countryId,
         [FromQuery] int[]? ingredientIds,
         [FromQuery] string[]? freeTextTags,
+        [FromQuery] bool matchAllIngredients = false,
+        [FromQuery] string? lang = "en",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
+        var langCode = lang is "uk" or "pl" ? lang : "en";
         var query = _db.Cocktails
             .Where(c => c.IsModerated)
             .Include(c => c.Country)
+            .Include(c => c.Translations)
             .Include(c => c.CocktailIngredients).ThenInclude(ci => ci.Ingredient)
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim().ToLower();
+            query = query.Where(c =>
+                c.Name.ToLower().Contains(term) ||
+                c.Translations.Any(t => t.LangCode == langCode && t.Name.ToLower().Contains(term)));
+        }
 
         if (countryId.HasValue)
             query = query.Where(c => c.CountryId == countryId.Value);
 
         if (ingredientIds is { Length: > 0 })
         {
-            query = query.Where(c => c.CocktailIngredients.Any(ci => ingredientIds.Contains(ci.IngredientId)));
+            if (matchAllIngredients)
+                query = query.Where(c => ingredientIds.All(id => c.CocktailIngredients.Any(ci => ci.IngredientId == id)));
+            else
+                query = query.Where(c => c.CocktailIngredients.Any(ci => ingredientIds.Contains(ci.IngredientId)));
         }
 
         if (freeTextTags is { Length: > 0 })
@@ -70,16 +86,22 @@ public class CocktailsController : ControllerBase
                 .ToListAsync(ct)).ToHashSet();
         }
 
-        var items = cocktails.Select(c => new CocktailListResponse(
-            c.Id, c.Name, c.ImageUrl, c.Country.Name, favIds.Contains(c.Id))).ToList();
+        var items = cocktails.Select(c =>
+        {
+            var tr = c.Translations.FirstOrDefault(t => t.LangCode == langCode);
+            var displayName = tr?.Name ?? c.Name;
+            return new CocktailListResponse(c.Id, displayName, c.ImageUrl, c.Country.Name, favIds.Contains(c.Id));
+        }).ToList();
         return Ok(new { items, total, page, pageSize });
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id, CancellationToken ct)
+    public async Task<IActionResult> GetById(int id, [FromQuery] string? lang = "en", CancellationToken ct = default)
     {
+        var langCode = lang is "uk" or "pl" ? lang : "en";
         var cocktail = await _db.Cocktails
             .Include(c => c.Country)
+            .Include(c => c.Translations)
             .Include(c => c.CocktailIngredients).ThenInclude(ci => ci.Ingredient)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
         if (cocktail == null) return NotFound();
@@ -89,11 +111,15 @@ public class CocktailsController : ControllerBase
         var isFav = UserId.HasValue && await _db.Favorites
             .AnyAsync(f => f.UserId == UserId && f.CocktailId == id, ct);
 
+        var tr = cocktail.Translations.FirstOrDefault(t => t.LangCode == langCode);
+        var name = tr?.Name ?? cocktail.Name;
+        var description = tr?.Description ?? cocktail.Description;
+        var instructions = tr?.Instructions ?? cocktail.Instructions;
         var ingredients = cocktail.CocktailIngredients
             .Select(ci => new IngredientMeasureDto(ci.IngredientId, ci.Ingredient.Name, ci.Measure))
             .ToList();
         return Ok(new CocktailResponse(
-            cocktail.Id, cocktail.Name, cocktail.Description, cocktail.Instructions,
+            cocktail.Id, name, description, instructions,
             cocktail.ImageUrl, cocktail.CountryId, cocktail.Country.Name, cocktail.IsModerated,
             isFav, ingredients));
     }
