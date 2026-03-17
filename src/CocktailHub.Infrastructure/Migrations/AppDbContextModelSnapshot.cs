@@ -80,6 +80,30 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.ToTable("CocktailIngredients");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.CocktailTranslation", b =>
+                {
+                    b.Property<int>("CocktailId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LangCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("CocktailId", "LangCode");
+
+                    b.ToTable("CocktailTranslations");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.Country", b =>
                 {
                     b.Property<int>("Id")
@@ -339,6 +363,23 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.ToTable("Ingredients");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.IngredientTranslation", b =>
+                {
+                    b.Property<int>("IngredientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LangCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("IngredientId", "LangCode");
+
+                    b.ToTable("IngredientTranslations");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -370,7 +411,7 @@ namespace CocktailHub.Infrastructure.Migrations
                         {
                             Id = 1,
                             Email = "admin@cocktailhub.com",
-                            PasswordHash = "$2a$11$TKNcswsMVJd4iVlDKqv0SOJx5uEmoOdilcmmVEmcg38tJAQPHhOCm",
+                            PasswordHash = "$2a$11$RNKloeg9cc6b0VJKllznLOVU6KMHXa.GgD6KHzC21ijB7ziqA3ZUK",
                             Role = 1
                         });
                 });
@@ -411,6 +452,17 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.Navigation("Ingredient");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.CocktailTranslation", b =>
+                {
+                    b.HasOne("CocktailHub.Core.Entities.Cocktail", "Cocktail")
+                        .WithMany("Translations")
+                        .HasForeignKey("CocktailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cocktail");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.Favorite", b =>
                 {
                     b.HasOne("CocktailHub.Core.Entities.Cocktail", "Cocktail")
@@ -430,11 +482,24 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.IngredientTranslation", b =>
+                {
+                    b.HasOne("CocktailHub.Core.Entities.Ingredient", "Ingredient")
+                        .WithMany("Translations")
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.Cocktail", b =>
                 {
                     b.Navigation("CocktailIngredients");
 
                     b.Navigation("Favorites");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("CocktailHub.Core.Entities.Country", b =>
@@ -445,6 +510,8 @@ namespace CocktailHub.Infrastructure.Migrations
             modelBuilder.Entity("CocktailHub.Core.Entities.Ingredient", b =>
                 {
                     b.Navigation("CocktailIngredients");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("CocktailHub.Core.Entities.User", b =>

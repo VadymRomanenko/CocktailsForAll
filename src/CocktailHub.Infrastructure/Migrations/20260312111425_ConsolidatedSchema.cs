@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CocktailHub.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class ConsolidatedSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -134,6 +134,46 @@ namespace CocktailHub.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "CocktailTranslations",
+                columns: table => new
+                {
+                    CocktailId = table.Column<int>(type: "integer", nullable: false),
+                    LangCode = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Instructions = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CocktailTranslations", x => new { x.CocktailId, x.LangCode });
+                    table.ForeignKey(
+                        name: "FK_CocktailTranslations_Cocktails_CocktailId",
+                        column: x => x.CocktailId,
+                        principalTable: "Cocktails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IngredientTranslations",
+                columns: table => new
+                {
+                    IngredientId = table.Column<int>(type: "integer", nullable: false),
+                    LangCode = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IngredientTranslations", x => new { x.IngredientId, x.LangCode });
+                    table.ForeignKey(
+                        name: "FK_IngredientTranslations_Ingredients_IngredientId",
+                        column: x => x.IngredientId,
+                        principalTable: "Ingredients",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Countries",
                 columns: new[] { "Id", "IsoCode", "Name" },
@@ -146,17 +186,38 @@ namespace CocktailHub.Infrastructure.Migrations
                     { 5, "CU", "Cuba" },
                     { 6, "IT", "Italy" },
                     { 7, "JP", "Japan" },
-                    { 8, "RU", "Russia" },
+                    { 8, "RU", "ruZZia" },
                     { 9, "ES", "Spain" },
                     { 10, "IE", "Ireland" },
                     { 11, "BR", "Brazil" },
-                    { 12, "DE", "Germany" }
+                    { 12, "DE", "Germany" },
+                    { 13, "PL", "Poland" },
+                    { 14, "UA", "Ukraine" },
+                    { 15, "GR", "Greece" },
+                    { 16, "PT", "Portugal" },
+                    { 17, "AR", "Argentina" },
+                    { 18, "CO", "Colombia" },
+                    { 19, "JM", "Jamaica" },
+                    { 20, "TH", "Thailand" },
+                    { 21, "CN", "China" },
+                    { 22, "IN", "India" },
+                    { 23, "AU", "Australia" },
+                    { 24, "CA", "Canada" },
+                    { 25, "NL", "Netherlands" },
+                    { 26, "BE", "Belgium" },
+                    { 27, "AT", "Austria" },
+                    { 28, "SE", "Sweden" },
+                    { 29, "NO", "Norway" },
+                    { 30, "DK", "Denmark" },
+                    { 31, "FI", "Finland" },
+                    { 32, "CH", "Switzerland" },
+                    { 33, "CZ", "Czech Republic" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "Email", "PasswordHash", "Role" },
-                values: new object[] { 1, "admin@cocktailhub.com", "$2a$11$I1K7kMFl4YfH/bgB/Fds9O8vhbLB44LQl5lb/Z4A.neo8AM0ZCn.u", 1 });
+                values: new object[] { 1, "admin@cocktailhub.com", "$2a$11$TKNcswsMVJd4iVlDKqv0SOJx5uEmoOdilcmmVEmcg38tJAQPHhOCm", 1 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_CocktailIngredients_IngredientId",
@@ -204,7 +265,13 @@ namespace CocktailHub.Infrastructure.Migrations
                 name: "CocktailIngredients");
 
             migrationBuilder.DropTable(
+                name: "CocktailTranslations");
+
+            migrationBuilder.DropTable(
                 name: "Favorites");
+
+            migrationBuilder.DropTable(
+                name: "IngredientTranslations");
 
             migrationBuilder.DropTable(
                 name: "Ingredients");

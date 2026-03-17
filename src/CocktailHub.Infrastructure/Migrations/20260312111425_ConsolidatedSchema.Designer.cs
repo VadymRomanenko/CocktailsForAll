@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CocktailHub.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260310080719_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260312111425_ConsolidatedSchema")]
+    partial class ConsolidatedSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -81,6 +81,30 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.HasIndex("IngredientId");
 
                     b.ToTable("CocktailIngredients");
+                });
+
+            modelBuilder.Entity("CocktailHub.Core.Entities.CocktailTranslation", b =>
+                {
+                    b.Property<int>("CocktailId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LangCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("CocktailId", "LangCode");
+
+                    b.ToTable("CocktailTranslations");
                 });
 
             modelBuilder.Entity("CocktailHub.Core.Entities.Country", b =>
@@ -153,7 +177,7 @@ namespace CocktailHub.Infrastructure.Migrations
                         {
                             Id = 8,
                             IsoCode = "RU",
-                            Name = "Russia"
+                            Name = "ruZZia"
                         },
                         new
                         {
@@ -178,6 +202,132 @@ namespace CocktailHub.Infrastructure.Migrations
                             Id = 12,
                             IsoCode = "DE",
                             Name = "Germany"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            IsoCode = "PL",
+                            Name = "Poland"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            IsoCode = "UA",
+                            Name = "Ukraine"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            IsoCode = "GR",
+                            Name = "Greece"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            IsoCode = "PT",
+                            Name = "Portugal"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            IsoCode = "AR",
+                            Name = "Argentina"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            IsoCode = "CO",
+                            Name = "Colombia"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            IsoCode = "JM",
+                            Name = "Jamaica"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            IsoCode = "TH",
+                            Name = "Thailand"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            IsoCode = "CN",
+                            Name = "China"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            IsoCode = "IN",
+                            Name = "India"
+                        },
+                        new
+                        {
+                            Id = 23,
+                            IsoCode = "AU",
+                            Name = "Australia"
+                        },
+                        new
+                        {
+                            Id = 24,
+                            IsoCode = "CA",
+                            Name = "Canada"
+                        },
+                        new
+                        {
+                            Id = 25,
+                            IsoCode = "NL",
+                            Name = "Netherlands"
+                        },
+                        new
+                        {
+                            Id = 26,
+                            IsoCode = "BE",
+                            Name = "Belgium"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            IsoCode = "AT",
+                            Name = "Austria"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            IsoCode = "SE",
+                            Name = "Sweden"
+                        },
+                        new
+                        {
+                            Id = 29,
+                            IsoCode = "NO",
+                            Name = "Norway"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            IsoCode = "DK",
+                            Name = "Denmark"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            IsoCode = "FI",
+                            Name = "Finland"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            IsoCode = "CH",
+                            Name = "Switzerland"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            IsoCode = "CZ",
+                            Name = "Czech Republic"
                         });
                 });
 
@@ -216,6 +366,23 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.ToTable("Ingredients");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.IngredientTranslation", b =>
+                {
+                    b.Property<int>("IngredientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LangCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("IngredientId", "LangCode");
+
+                    b.ToTable("IngredientTranslations");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -247,7 +414,7 @@ namespace CocktailHub.Infrastructure.Migrations
                         {
                             Id = 1,
                             Email = "admin@cocktailhub.com",
-                            PasswordHash = "$2a$11$I1K7kMFl4YfH/bgB/Fds9O8vhbLB44LQl5lb/Z4A.neo8AM0ZCn.u",
+                            PasswordHash = "$2a$11$RNKloeg9cc6b0VJKllznLOVU6KMHXa.GgD6KHzC21ijB7ziqA3ZUK",
                             Role = 1
                         });
                 });
@@ -288,6 +455,17 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.Navigation("Ingredient");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.CocktailTranslation", b =>
+                {
+                    b.HasOne("CocktailHub.Core.Entities.Cocktail", "Cocktail")
+                        .WithMany("Translations")
+                        .HasForeignKey("CocktailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cocktail");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.Favorite", b =>
                 {
                     b.HasOne("CocktailHub.Core.Entities.Cocktail", "Cocktail")
@@ -307,11 +485,24 @@ namespace CocktailHub.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CocktailHub.Core.Entities.IngredientTranslation", b =>
+                {
+                    b.HasOne("CocktailHub.Core.Entities.Ingredient", "Ingredient")
+                        .WithMany("Translations")
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+                });
+
             modelBuilder.Entity("CocktailHub.Core.Entities.Cocktail", b =>
                 {
                     b.Navigation("CocktailIngredients");
 
                     b.Navigation("Favorites");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("CocktailHub.Core.Entities.Country", b =>
@@ -322,6 +513,8 @@ namespace CocktailHub.Infrastructure.Migrations
             modelBuilder.Entity("CocktailHub.Core.Entities.Ingredient", b =>
                 {
                     b.Navigation("CocktailIngredients");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("CocktailHub.Core.Entities.User", b =>

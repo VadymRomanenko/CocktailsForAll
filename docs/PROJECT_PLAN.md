@@ -17,7 +17,7 @@ CocktailsForAll/
 ├── client/
 ├── docs/
 │   ├── PROJECT_PLAN.md
-│   └── DOCKER_RUN.md
+│   └── INITIAL_SETUP.md
 ├── CocktailHub.sln
 └── docker-compose.yml
 ```

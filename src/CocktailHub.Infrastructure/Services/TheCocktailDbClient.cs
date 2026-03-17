@@ -3,6 +3,37 @@ using System.Text.Json.Serialization;
 
 namespace CocktailHub.Infrastructure.Services;
 
+/// <summary>
+/// TheCocktailDB returns "drinks": "no data found" (string) when empty, but we expect List.
+/// </summary>
+internal sealed class DrinksSummaryOrNullConverter : JsonConverter<List<DrinkSummary>?>
+{
+    public override List<DrinkSummary>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.String) return null; // "no data found"
+        if (reader.TokenType == JsonTokenType.StartArray)
+            return JsonSerializer.Deserialize<List<DrinkSummary>>(ref reader, options);
+        throw new JsonException($"Unexpected token type: {reader.TokenType}");
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<DrinkSummary>? value, JsonSerializerOptions options) { }
+}
+
+internal sealed class DrinksDetailOrNullConverter : JsonConverter<List<DrinkDetail>?>
+{
+    public override List<DrinkDetail>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.String) return null; // "no data found"
+        if (reader.TokenType == JsonTokenType.StartArray)
+            return JsonSerializer.Deserialize<List<DrinkDetail>>(ref reader, options);
+        throw new JsonException($"Unexpected token type: {reader.TokenType}");
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<DrinkDetail>? value, JsonSerializerOptions options) { }
+}
+
 public class TheCocktailDbClient
 {
     private readonly HttpClient _httpClient;
@@ -99,6 +130,7 @@ public class CategoryItem
 public class DrinksListResponse
 {
     [JsonPropertyName("drinks")]
+    [JsonConverter(typeof(DrinksSummaryOrNullConverter))]
     public List<DrinkSummary>? Drinks { get; set; }
 }
 
@@ -111,6 +143,7 @@ public class DrinkSummary
 public class DrinksDetailResponse
 {
     [JsonPropertyName("drinks")]
+    [JsonConverter(typeof(DrinksDetailOrNullConverter))]
     public List<DrinkDetail>? Drinks { get; set; }
 }
 

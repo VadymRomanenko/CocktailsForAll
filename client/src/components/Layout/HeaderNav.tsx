@@ -16,7 +16,6 @@ export function HeaderNav() {
   ];
 
   return (
-    <header className="flex-1 border-b border-amber-800/50 pb-4 mb-4">
       <div className="flex items-center justify-between">
         <Link to="/" className="text-xl font-bold text-amber-50 whitespace-nowrap">Cocktail Hub</Link>
         <nav className="hidden md:flex gap-4">
@@ -43,6 +42,5 @@ export function HeaderNav() {
           </Link>
         </nav>
       </div>
-    </header>
   );
 }

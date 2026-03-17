@@ -13,6 +13,7 @@ export async function api<T>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
   const res = await fetch(`/api${path}`, { ...options, headers });
+  console.log('api', res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || `HTTP ${res.status}`);

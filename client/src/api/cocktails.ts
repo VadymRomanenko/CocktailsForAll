@@ -36,6 +36,7 @@ export function fetchCocktails(params: {
   page?: number;
   pageSize?: number;
 }) {
+  console.log('Start fetchCocktails');
   const sp = new URLSearchParams();
   if (params.name) sp.set('name', params.name);
   if (params.countryId) sp.set('countryId', String(params.countryId));
@@ -45,6 +46,7 @@ export function fetchCocktails(params: {
   if (params.lang) sp.set('lang', params.lang);
   if (params.page) sp.set('page', String(params.page));
   if (params.pageSize) sp.set('pageSize', String(params.pageSize));
+  console.log('End fetchCocktails');
   return apiGet<CocktailListResponse>(`/cocktails?${sp}`);
 }
 

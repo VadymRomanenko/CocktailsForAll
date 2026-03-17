@@ -1,5 +1,7 @@
+using System.Text.Json;
 using CocktailHub.Core.Entities;
 using CocktailHub.Infrastructure.Data;
+using CocktailHub.Infrastructure.SeedData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -74,8 +76,96 @@ public class CocktailDbSeeder
             return;
         }
 
+        if (await TrySeedFromJsonAsync(ct))
+            return;
+
         await SeedIngredientsAsync(ct);
         await SeedCocktailsAsync(ct);
+    }
+
+    private async Task<bool> TrySeedFromJsonAsync(CancellationToken ct)
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "SeedData", "cocktails.json");
+        if (!File.Exists(path))
+        {
+            _logger.LogInformation("Seed data file not found at {Path}, using API", path);
+            return false;
+        }
+
+        var json = await File.ReadAllTextAsync(path, ct);
+        var root = JsonSerializer.Deserialize<SeedDataRoot>(json);
+        if (root?.Cocktails == null || root.Cocktails.Count == 0)
+        {
+            _logger.LogInformation("Seed data file is empty, using API");
+            return false;
+        }
+
+        _logger.LogInformation("Seeding from static JSON ({Count} cocktails, {Ingredients} ingredients)",
+            root.Cocktails.Count, root.Ingredients.Count);
+
+        var ingredientLookup = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var name in root.Ingredients)
+        {
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            var ing = new Ingredient { Name = name.Trim() };
+            _db.Ingredients.Add(ing);
+        }
+        await _db.SaveChangesAsync(ct);
+
+        foreach (var ing in await _db.Ingredients.ToListAsync(ct))
+            ingredientLookup[ing.Name] = ing.Id;
+
+        foreach (var sc in root.Cocktails)
+        {
+            if (string.IsNullOrWhiteSpace(sc.Name)) continue;
+            var cocktail = new Cocktail
+            {
+                Name = sc.Name,
+                Description = sc.Description,
+                Instructions = sc.Instructions ?? "",
+                ImageUrl = sc.ImageUrl,
+                CountryId = sc.CountryId is >= 1 and <= 33 ? sc.CountryId : 1,
+                IsModerated = true,
+                CreatedByUserId = null
+            };
+            _db.Cocktails.Add(cocktail);
+            await _db.SaveChangesAsync(ct);
+
+            _db.CocktailTranslations.Add(new CocktailTranslation
+            {
+                CocktailId = cocktail.Id,
+                LangCode = "en",
+                Name = cocktail.Name,
+                Description = cocktail.Description,
+                Instructions = cocktail.Instructions
+            });
+
+            var seenIngredients = new HashSet<int>();
+            foreach (var si in sc.Ingredients)
+            {
+                if (string.IsNullOrWhiteSpace(si.Name)) continue;
+                if (!ingredientLookup.TryGetValue(si.Name.Trim(), out var ingId))
+                {
+                    var newIng = new Ingredient { Name = si.Name.Trim() };
+                    _db.Ingredients.Add(newIng);
+                    await _db.SaveChangesAsync(ct);
+                    ingId = newIng.Id;
+                    ingredientLookup[si.Name.Trim()] = ingId;
+                }
+                if (!seenIngredients.Add(ingId)) continue; // dedupe: same ingredient twice
+                _db.CocktailIngredients.Add(new CocktailIngredient
+                {
+                    CocktailId = cocktail.Id,
+                    IngredientId = ingId,
+                    Measure = si.Measure
+                });
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+
+        _logger.LogInformation("Seeded {Count} cocktails from JSON", root.Cocktails.Count);
+        return true;
     }
 
     private async Task SeedIngredientsAsync(CancellationToken ct)
@@ -220,7 +310,7 @@ public class CocktailDbSeeder
                     }
                 }
 
-                var ingredients = GetIngredientMeasures(drink);
+                var ingredients = GetIngredientMeasuresDeduplicated(drink);
                 foreach (var (name, measure) in ingredients)
                 {
                     if (string.IsNullOrWhiteSpace(name)) continue;
@@ -261,7 +351,11 @@ public class CocktailDbSeeder
         return FallbackCountryIds[random.Next(FallbackCountryIds.Length)];
     }
 
-    private static List<(string Name, string? Measure)> GetIngredientMeasures(DrinkDetail d)
+    /// <summary>
+    /// Deduplicates ingredients by name (case-insensitive). Prevents PK_CocktailIngredients
+    /// violation when TheCocktailDB returns the same ingredient multiple times.
+    /// </summary>
+    private static List<(string Name, string? Measure)> GetIngredientMeasuresDeduplicated(DrinkDetail d)
     {
         var ingredients = new[]
         {
@@ -271,9 +365,11 @@ public class CocktailDbSeeder
             (d.StrIngredient10, d.StrMeasure10), (d.StrIngredient11, d.StrMeasure11), (d.StrIngredient12, d.StrMeasure12),
             (d.StrIngredient13, d.StrMeasure13), (d.StrIngredient14, d.StrMeasure14), (d.StrIngredient15, d.StrMeasure15)
         };
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         return ingredients
             .Where(x => !string.IsNullOrWhiteSpace(x.Item1))
             .Select(x => (x.Item1!.Trim(), string.IsNullOrWhiteSpace(x.Item2) ? null : x.Item2?.Trim()))
+            .Where(x => seen.Add(x.Item1))
             .ToList();
     }
 }
