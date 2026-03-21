@@ -1,6 +1,8 @@
 using System.Text;
+using CocktailHub.Api.Options;
 using CocktailHub.Api.Services;
 using CocktailHub.Infrastructure.Data;
+using CocktailHub.Infrastructure.Options;
 using CocktailHub.Infrastructure.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -10,16 +12,22 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<CocktailHubOptions>(builder.Configuration.GetSection("CocktailHub"));
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpClient<TheCocktailDbClient>();
+builder.Services.AddHttpClient<TranslationService>();
 builder.Services.AddScoped<CocktailDbSeeder>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -29,10 +37,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "default-key"))
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key))
         };
     });
 builder.Services.AddAuthorization();

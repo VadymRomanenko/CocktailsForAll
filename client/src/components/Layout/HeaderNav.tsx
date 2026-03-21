@@ -16,8 +16,7 @@ export function HeaderNav() {
   ];
 
   return (
-    <header className="flex-1 border-b border-amber-800/50 pb-4 mb-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <Link to="/" className="text-xl font-bold text-amber-50 whitespace-nowrap">Cocktail Hub</Link>
         <nav className="hidden md:flex gap-4">
           {navItems.map(({ to, icon: Icon, label }) => {
@@ -43,6 +42,5 @@ export function HeaderNav() {
           </Link>
         </nav>
       </div>
-    </header>
   );
 }

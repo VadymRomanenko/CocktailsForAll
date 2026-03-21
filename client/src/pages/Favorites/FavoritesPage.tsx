@@ -9,17 +9,17 @@ import { useAuth } from '../../context/AuthContext';
 import type { CocktailDetail } from '../../api/cocktails';
 
 export function FavoritesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [favorites, setFavorites] = useState<CocktailDetail[]>([]);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated) return;
     getMyFavorites().then(async (ids) => {
-      const items = await Promise.all(ids.map((id) => fetchCocktailById(id)));
+      const items = await Promise.all(ids.map((id) => fetchCocktailById(id, i18n.language)));
       setFavorites(items);
     });
-  }, [isAuthenticated]);
+  }, [isAuthenticated, i18n.language]);
 
   const removeFromFavorites = async (id: number) => {
     await removeFavorite(id);

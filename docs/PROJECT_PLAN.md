@@ -15,81 +15,87 @@ CocktailsForAll/
 │   ├── CocktailHub.Core/
 │   └── CocktailHub.Infrastructure/
 ├── client/
-├── docs/                  # Project documentation
-│   └── PROJECT_PLAN.md
+├── docs/
+│   ├── PROJECT_PLAN.md
+│   └── INITIAL_SETUP.md
 ├── CocktailHub.sln
 └── docker-compose.yml
 ```
 
 ---
 
-## 2. Multi-Language Interface (i18n)
+## 2. Multi-Language (i18n)
 
-**Languages (starter):** Ukrainian, English, Polish
+**Languages:** Ukrainian, English, Polish
 
-**Implementation:**
-- **Library:** react-i18next + i18next
-- **Structure:** `client/src/locales/{uk,en,pl}/translation.json`
-- **Features:**
-  - Language switcher in header/bottom nav
-  - Persist selected language in localStorage
-  - Fallback to English if translation missing
-
-**Scope of translation:**
-- Navigation labels (Home, Search, Favorites, Login, etc.)
-- Form labels and validation messages
-- Page titles
-- Buttons and common UI text
+- **UI:** react-i18next, `client/src/locales/{uk,en,pl}/translation.json`
+- **Recipes:** CocktailTranslation, IngredientTranslation tables; API returns content by `?lang=uk|en|pl`
+- **Optional:** MyMemory API for seeding uk/pl translations (`CocktailHub:SeedTranslations: true` in config)
 
 ---
 
-## 3. Countries
+## 3. Recipe Translations
 
-**Naming:** Use `ruZZia` instead of `Russia` in the countries list.
-
-**Expanded countries list:** Broader set for better coverage:
-- USA, United Kingdom, France, Mexico, Cuba, Italy, Japan, ruZZia, Spain, Ireland
-- Brazil, Germany, Poland, Ukraine, Greece, Portugal, Argentina, Colombia
-- Jamaica, Thailand, China, India, Australia, Canada, Netherlands, Belgium
-- Austria, Sweden, Norway, Denmark, Finland, Switzerland, Czech Republic
+- **CocktailTranslation:** CocktailId, LangCode, Name, Description, Instructions
+- **IngredientTranslation:** IngredientId, LangCode, Name
+- EN seeded from TheCocktailDB; uk/pl via MyMemory during seed (optional)
+- API: `GET /api/cocktails?lang=uk` and `GET /api/cocktails/{id}?lang=uk`
 
 ---
 
 ## 4. Cocktail Seeding (TheCocktailDB)
 
-**Current:** `search.php?f=a` … `f=z` (by first letter)
+**Limit:** Top 500 cocktails
 
-**Expanded extraction:**
-1. **By first letter** — keep existing loop (a–z)
-2. **By category** — `filter.php?c={category}` for each category from `list.php?c=list`
-3. **By popular ingredient** — `filter.php?i={ingredient}` for top ingredients (Vodka, Gin, Rum, etc.)
-4. **Merge and deduplicate** by `idDrink`
+**Sources:**
+1. `search.php?f=a` … `f=z` (by first letter)
+2. `filter.php?c={category}` for categories from `list.php?c=list`
+3. `filter.php?i={ingredient}` for popular ingredients (Vodka, Gin, Rum, etc.)
+4. Merge and deduplicate by `idDrink`
 
-**Rate limiting:** 150–200 ms delay between API calls to respect limits.
+**Ingredients:** Full list from `list.php?i=list` plus new ones from each cocktail.
+
+**Rate limiting:** 150–200 ms between API calls.
 
 ---
 
-## 5. Database
+## 5. Search
+
+**By cocktail name:** `?name=...` (searches Name and translations)
+
+**By ingredients:** `?ingredientIds=...` and `?freeTextTags=...`
+
+**Match mode:**
+- `matchAllIngredients=false` (default): cocktail has ANY of the ingredients
+- `matchAllIngredients=true`: cocktail has ALL selected ingredients
+
+**Language:** `?lang=uk|en|pl` for localized content.
+
+---
+
+## 6. Database
 
 | Table | Key Fields |
 |-------|------------|
 | Countries | Id, Name, IsoCode |
 | Cocktails | Id, Name, Description, Instructions, ImageUrl, CountryId, IsModerated, CreatedByUserId |
+| CocktailTranslations | CocktailId, LangCode, Name, Description, Instructions |
 | Ingredients | Id, Name |
+| IngredientTranslations | IngredientId, LangCode, Name |
 | CocktailIngredients | CocktailId, IngredientId, Measure |
 | Users | Id, Email, PasswordHash, Role |
 | Favorites | UserId, CocktailId |
 
 ---
 
-## 6. API Endpoints
+## 7. API Endpoints
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| GET | /api/cocktails | List (filters, pagination) |
-| GET | /api/cocktails/{id} | Details |
+| GET | /api/cocktails?name=&countryId=&ingredientIds=&freeTextTags=&matchAllIngredients=&lang=&page=&pageSize= | List with filters |
+| GET | /api/cocktails/{id}?lang= | Details |
 | POST | /api/cocktails | Create (auth) |
-| GET | /api/countries | Countries for dropdown |
+| GET | /api/countries | Countries dropdown |
 | GET | /api/ingredients?search= | Autocomplete |
 | POST | /api/auth/register | Register |
 | POST | /api/auth/login | Login |
@@ -99,35 +105,19 @@ CocktailsForAll/
 
 ---
 
-## 7. Frontend Structure
+## 8. Frontend Search UI
 
-```
-client/src/
-├── locales/           # i18n
-│   ├── uk/
-│   ├── en/
-│   └── pl/
-├── components/
-├── pages/
-├── context/
-├── api/
-└── hooks/
-```
-
----
-
-## 8. Implementation Order (Updates)
-
-1. ~~Solution + EF Core + Auth + Controllers~~
-2. **Multi-language** — add react-i18next, translation files, language switcher
-3. **Countries** — rename Russia → ruZZia, expand list, migration
-4. **Seeding** — add category and ingredient filters, increase cocktail coverage
-5. **Save plan** — this document in `docs/PROJECT_PLAN.md`
+- **Name search:** Separate text input
+- **Ingredient search:** IngredientSearchBar (autocomplete + free text)
+- **Match-all checkbox:** “Must contain ALL selected ingredients”
+- **Country filter:** Dropdown
+- **Lang:** Passed from i18n to API
 
 ---
 
 ## 9. Technical Notes
 
 - **CORS:** Allow `http://localhost:5173`
-- **TheCocktailDB:** Free key `1`; rate limit ~5 req/sec
-- **Country seeding:** Migration or data fix for Russia → ruZZia in existing DBs
+- **TheCocktailDB:** Free key `1`; respect rate limits
+- **Translation seeding:** Set `CocktailHub:SeedTranslations: true` to translate recipes (slower)
+- **PostgreSQL:** Port 5433 (docker-compose) to avoid conflict with local instance

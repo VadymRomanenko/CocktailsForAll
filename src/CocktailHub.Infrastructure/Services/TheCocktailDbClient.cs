@@ -3,6 +3,37 @@ using System.Text.Json.Serialization;
 
 namespace CocktailHub.Infrastructure.Services;
 
+/// <summary>
+/// TheCocktailDB returns "drinks": "no data found" (string) when empty, but we expect List.
+/// </summary>
+internal sealed class DrinksSummaryOrNullConverter : JsonConverter<List<DrinkSummary>?>
+{
+    public override List<DrinkSummary>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.String) return null; // "no data found"
+        if (reader.TokenType == JsonTokenType.StartArray)
+            return JsonSerializer.Deserialize<List<DrinkSummary>>(ref reader, options);
+        throw new JsonException($"Unexpected token type: {reader.TokenType}");
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<DrinkSummary>? value, JsonSerializerOptions options) { }
+}
+
+internal sealed class DrinksDetailOrNullConverter : JsonConverter<List<DrinkDetail>?>
+{
+    public override List<DrinkDetail>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.String) return null; // "no data found"
+        if (reader.TokenType == JsonTokenType.StartArray)
+            return JsonSerializer.Deserialize<List<DrinkDetail>>(ref reader, options);
+        throw new JsonException($"Unexpected token type: {reader.TokenType}");
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<DrinkDetail>? value, JsonSerializerOptions options) { }
+}
+
 public class TheCocktailDbClient
 {
     private readonly HttpClient _httpClient;
@@ -20,6 +51,32 @@ public class TheCocktailDbClient
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<IngredientsListResponse>(json);
+    }
+
+    public async Task<CategoriesListResponse?> GetCategoriesListAsync(CancellationToken ct = default)
+    {
+        var response = await _httpClient.GetAsync("list.php?c=list", ct);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<CategoriesListResponse>(json);
+    }
+
+    public async Task<DrinksListResponse?> FilterByCategoryAsync(string category, CancellationToken ct = default)
+    {
+        var encoded = category.Replace(" ", "_").Replace("/", "_");
+        var response = await _httpClient.GetAsync($"filter.php?c={encoded}", ct);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<DrinksListResponse>(json);
+    }
+
+    public async Task<DrinksListResponse?> FilterByIngredientAsync(string ingredient, CancellationToken ct = default)
+    {
+        var encoded = Uri.EscapeDataString(ingredient);
+        var response = await _httpClient.GetAsync($"filter.php?i={encoded}", ct);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<DrinksListResponse>(json);
     }
 
     public async Task<DrinksListResponse?> SearchByFirstLetterAsync(char letter, CancellationToken ct = default)
@@ -58,9 +115,22 @@ public class IngredientItem
     public string? StrIngredient1 { get; set; }
 }
 
+public class CategoriesListResponse
+{
+    [JsonPropertyName("drinks")]
+    public List<CategoryItem>? Drinks { get; set; }
+}
+
+public class CategoryItem
+{
+    [JsonPropertyName("strCategory")]
+    public string? StrCategory { get; set; }
+}
+
 public class DrinksListResponse
 {
     [JsonPropertyName("drinks")]
+    [JsonConverter(typeof(DrinksSummaryOrNullConverter))]
     public List<DrinkSummary>? Drinks { get; set; }
 }
 
@@ -73,6 +143,7 @@ public class DrinkSummary
 public class DrinksDetailResponse
 {
     [JsonPropertyName("drinks")]
+    [JsonConverter(typeof(DrinksDetailOrNullConverter))]
     public List<DrinkDetail>? Drinks { get; set; }
 }
 

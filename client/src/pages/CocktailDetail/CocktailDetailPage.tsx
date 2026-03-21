@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { CocktailDetail } from '../../api/cocktails';
 
 export function CocktailDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const [cocktail, setCocktail] = useState<CocktailDetail | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -16,11 +16,11 @@ export function CocktailDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetchCocktailById(Number(id)).then((c) => {
+    fetchCocktailById(Number(id), i18n.language).then((c) => {
       setCocktail(c);
       setIsFavorite(c.isFavorite);
     });
-  }, [id]);
+  }, [id, i18n.language]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated || !cocktail) return;
