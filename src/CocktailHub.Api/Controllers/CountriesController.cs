@@ -15,13 +15,26 @@ public class CountriesController : ControllerBase
         _db = db;
     }
 
+    public record CountriesFilter([FromQuery] bool ShowNonEmptyOnly = false, [FromQuery] bool ShowCoctailCountsInName = false);
+
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
+    public async Task<IActionResult> GetAll([FromQuery] CountriesFilter filter, CancellationToken ct)
     {
-        var items = await _db.Countries
+        var query = _db.Countries.AsQueryable();
+        if (filter.ShowNonEmptyOnly)
+        {
+            query = query.Where(c => c.Cocktails.Any());
+        }
+        var items = await query
             .OrderBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name, c.IsoCode })
+            .Select(c => new {
+                c.Id,
+                Name = filter.ShowCoctailCountsInName
+                    ? $"{c.Name} ({c.Cocktails.Count})" 
+                    : c.Name,
+                c.IsoCode })
             .ToListAsync(ct);
         return Ok(items);
     }
+
 }

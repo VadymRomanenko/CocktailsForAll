@@ -16,7 +16,7 @@ export function HeaderNav() {
   ];
 
   return (
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <Link to="/" className="text-xl font-bold text-amber-50 whitespace-nowrap">Cocktail Hub</Link>
         <nav className="hidden md:flex gap-4">
           {navItems.map(({ to, icon: Icon, label }) => {

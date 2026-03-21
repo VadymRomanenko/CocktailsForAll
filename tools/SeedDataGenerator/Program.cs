@@ -2,7 +2,7 @@ using System.Text.Json;
 using CocktailHub.Infrastructure.SeedData;
 using CocktailHub.Infrastructure.Services;
 
-var limit = args.Length > 0 && int.TryParse(args[0], out var n) ? n : 500;
+var limit = args.Length > 0 && int.TryParse(args[0], out var n) ? n : 5000;
 var http = new HttpClient();
 var client = new TheCocktailDbClient(http);
 var ids = await CollectDrinkIdsAsync(client, limit);
@@ -54,6 +54,7 @@ await using var fs = File.Create(outputPath);
 await JsonSerializer.SerializeAsync(fs, seedData, new JsonSerializerOptions { WriteIndented = true });
 
 Console.WriteLine($"\nWrote {cocktails.Count} cocktails and {allIngredientNames.Count} ingredients to {outputPath}");
+return;
 
 static async Task<List<string>> CollectDrinkIdsAsync(TheCocktailDbClient client, int maxCocktails)
 {

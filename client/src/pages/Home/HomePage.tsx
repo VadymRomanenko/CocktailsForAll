@@ -18,7 +18,7 @@ export function HomePage() {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    fetchCountries().then(setCountries);
+    fetchCountries({ showNonEmptyOnly: true, showCoctailCountsInName: true }).then(setCountries);
   }, []);
 
   useEffect(() => {
