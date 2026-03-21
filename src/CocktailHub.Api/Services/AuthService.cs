@@ -2,9 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using CocktailHub.Api.DTOs.Auth;
+using CocktailHub.Api.Options;
 using CocktailHub.Core.Entities;
 using CocktailHub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CocktailHub.Api.Services;
@@ -12,12 +14,12 @@ namespace CocktailHub.Api.Services;
 public class AuthService
 {
     private readonly AppDbContext _db;
-    private readonly IConfiguration _config;
+    private readonly JwtOptions _jwt;
 
-    public AuthService(AppDbContext db, IConfiguration config)
+    public AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions)
     {
         _db = db;
-        _config = config;
+        _jwt = jwtOptions.Value;
     }
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -47,7 +49,7 @@ public class AuthService
 
     private AuthResponse CreateAuthResponse(User user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "default-secret-key-min-32-chars!"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var claims = new[]
         {
@@ -56,8 +58,8 @@ public class AuthService
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"] ?? "CocktailHub",
-            audience: _config["Jwt:Audience"] ?? "CocktailHub",
+            issuer: _jwt.Issuer,
+            audience: _jwt.Audience,
             claims,
             expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: creds

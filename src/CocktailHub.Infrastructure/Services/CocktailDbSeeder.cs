@@ -1,10 +1,11 @@
 using System.Text.Json;
 using CocktailHub.Core.Entities;
 using CocktailHub.Infrastructure.Data;
+using CocktailHub.Infrastructure.Options;
 using CocktailHub.Infrastructure.SeedData;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CocktailHub.Infrastructure.Services;
 
@@ -15,7 +16,7 @@ public class CocktailDbSeeder
     private readonly TheCocktailDbClient _client;
     private readonly TranslationService? _translation;
     private readonly ILogger<CocktailDbSeeder> _logger;
-    private readonly IConfiguration _config;
+    private readonly CocktailHubOptions _options;
 
     private static readonly Dictionary<string, int> CategoryToCountryId = new()
     {
@@ -59,12 +60,12 @@ public class CocktailDbSeeder
 
     private static readonly int[] FallbackCountryIds = { 1, 2, 3, 4, 5, 6, 7, 8 };
 
-    public CocktailDbSeeder(AppDbContext db, TheCocktailDbClient client, ILogger<CocktailDbSeeder> logger, IConfiguration config, TranslationService? translation = null)
+    public CocktailDbSeeder(AppDbContext db, TheCocktailDbClient client, ILogger<CocktailDbSeeder> logger, IOptions<CocktailHubOptions> options, TranslationService? translation = null)
     {
         _db = db;
         _client = client;
         _logger = logger;
-        _config = config;
+        _options = options.Value;
         _translation = translation;
     }
 
@@ -255,7 +256,7 @@ public class CocktailDbSeeder
         var ids = await CollectDrinkIdsAsync(ct);
         var ingredientLookup = await _db.Ingredients.ToDictionaryAsync(i => i.Name.ToLowerInvariant(), i => i.Id, ct);
         var random = new Random();
-        var seedTranslations = string.Equals(_config["CocktailHub:SeedTranslations"], "true", StringComparison.OrdinalIgnoreCase);
+        var seedTranslations = _options.SeedTranslations;
 
         foreach (var id in ids)
         {
