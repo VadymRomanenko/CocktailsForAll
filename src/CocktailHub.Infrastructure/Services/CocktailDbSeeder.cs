@@ -343,6 +343,95 @@ public class CocktailDbSeeder
         _logger.LogInformation("Cocktail seeding completed");
     }
 
+    public async Task ApplyTranslationsFromFileAsync(CancellationToken ct = default)
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "SeedData", "cocktails-translations.json");
+        if (!File.Exists(path))
+        {
+            _logger.LogInformation("Translation file not found at {Path}, skipping", path);
+            return;
+        }
+
+        var json = await File.ReadAllTextAsync(path, ct);
+        var root = JsonSerializer.Deserialize<TranslationDataRoot>(json);
+        if (root == null || (root.Cocktails.Count == 0 && root.Ingredients.Count == 0))
+        {
+            _logger.LogInformation("Translation file is empty, skipping");
+            return;
+        }
+
+        _logger.LogInformation("Applying translations from file ({Cocktails} cocktails, {Ingredients} ingredients)",
+            root.Cocktails.Count, root.Ingredients.Count);
+
+        var cocktailIdByName = await _db.Cocktails
+            .ToDictionaryAsync(c => c.Name.ToLowerInvariant(), c => c.Id, ct);
+
+        var existingCocktailTranslations = await _db.CocktailTranslations
+            .Select(t => new { t.CocktailId, t.LangCode })
+            .ToListAsync(ct);
+        var existingCocktailKeys = existingCocktailTranslations
+            .Select(t => (t.CocktailId, t.LangCode))
+            .ToHashSet();
+
+        var addedCocktails = 0;
+        foreach (var entry in root.Cocktails)
+        {
+            if (!cocktailIdByName.TryGetValue(entry.Name.ToLowerInvariant(), out var cocktailId))
+                continue;
+
+            foreach (var tr in entry.Translations)
+            {
+                if (existingCocktailKeys.Contains((cocktailId, tr.Lang)))
+                    continue;
+
+                _db.CocktailTranslations.Add(new CocktailTranslation
+                {
+                    CocktailId = cocktailId,
+                    LangCode = tr.Lang,
+                    Name = tr.Name,
+                    Description = tr.Description,
+                    Instructions = tr.Instructions
+                });
+                addedCocktails++;
+            }
+        }
+
+        var ingredientIdByName = await _db.Ingredients
+            .ToDictionaryAsync(i => i.Name.ToLowerInvariant(), i => i.Id, ct);
+
+        var existingIngredientTranslations = await _db.IngredientTranslations
+            .Select(t => new { t.IngredientId, t.LangCode })
+            .ToListAsync(ct);
+        var existingIngredientKeys = existingIngredientTranslations
+            .Select(t => (t.IngredientId, t.LangCode))
+            .ToHashSet();
+
+        var addedIngredients = 0;
+        foreach (var entry in root.Ingredients)
+        {
+            if (!ingredientIdByName.TryGetValue(entry.Name.ToLowerInvariant(), out var ingredientId))
+                continue;
+
+            foreach (var tr in entry.Translations)
+            {
+                if (existingIngredientKeys.Contains((ingredientId, tr.Lang)))
+                    continue;
+
+                _db.IngredientTranslations.Add(new IngredientTranslation
+                {
+                    IngredientId = ingredientId,
+                    LangCode = tr.Lang,
+                    Name = tr.Name
+                });
+                addedIngredients++;
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+        _logger.LogInformation("Applied {Cocktails} cocktail translations and {Ingredients} ingredient translations",
+            addedCocktails, addedIngredients);
+    }
+
     private static int ResolveCountryId(DrinkDetail drink, Random random)
     {
         if (!string.IsNullOrEmpty(drink.StrIBA) && IbaToCountryId.TryGetValue(drink.StrIBA.Trim(), out var ibaId))

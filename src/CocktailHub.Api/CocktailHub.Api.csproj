@@ -22,6 +22,9 @@
     <Content Include="..\CocktailHub.Infrastructure\SeedData\cocktails.json" Link="SeedData\cocktails.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\CocktailHub.Infrastructure\SeedData\cocktails-translations.json" Link="SeedData\cocktails-translations.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CocktailHub.Core\CocktailHub.Core.csproj" />

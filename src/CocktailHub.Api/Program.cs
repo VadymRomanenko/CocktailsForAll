@@ -59,6 +59,7 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<CocktailDbSeeder>();
     await seeder.SeedAsync();
+    await seeder.ApplyTranslationsFromFileAsync();
 }
 
 if (app.Environment.IsDevelopment())

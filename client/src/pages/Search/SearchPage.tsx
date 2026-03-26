@@ -17,7 +17,7 @@ export function SearchPage() {
   const [countryId, setCountryId] = useState<number | ''>('');
   const [nameSearch, setNameSearch] = useState('');
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
-  const [matchAllIngredients, setMatchAllIngredients] = useState(false);
+  const [matchAllIngredients, setMatchAllIngredients] = useState(true);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const { isAuthenticated } = useAuth();
 

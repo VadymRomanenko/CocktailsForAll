@@ -1,60 +1,234 @@
-using System.Text.Json;
+using CocktailHub.Core.Entities;
 using CocktailHub.Infrastructure.SeedData;
 using CocktailHub.Infrastructure.Services;
+using System.Text.Json;
 
 var limit = args.Length > 0 && int.TryParse(args[0], out var n) ? n : 5000;
-var http = new HttpClient();
-var client = new TheCocktailDbClient(http);
-var ids = await CollectDrinkIdsAsync(client, limit);
-var random = new Random();
+var translationEmail = await ReadTranslationEmailAsync();
+if (args.Length > 1) translationEmail = args[1]; // CLI arg overrides config
+var langs = new[] { "uk", "pl" };
 
-var allIngredientNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-var cocktails = new List<SeedCocktail>();
+var outputPath = SeedDataPath("cocktails.json");
+Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
-foreach (var id in ids)
+SeedDataRoot seedData;
+
+if (File.Exists(outputPath))
 {
-    await Task.Delay(200);
-    var detail = await client.LookupCocktailAsync(id);
-    var drink = detail?.Drinks?.FirstOrDefault();
-    if (drink == null || string.IsNullOrEmpty(drink.StrDrink)) continue;
+    Console.WriteLine($"cocktails.json already exists — loading from file, skipping API fetch.");
+    seedData = JsonSerializer.Deserialize<SeedDataRoot>(await File.ReadAllTextAsync(outputPath))!;
+}
+else
+{
+    var http = new HttpClient();
+    var client = new TheCocktailDbClient(http);
+    var ids = await CollectDrinkIdsAsync(client, limit);
+    var random = new Random();
 
-    var countryId = ResolveCountryId(drink, random);
-    var ingredients = GetIngredientMeasuresDeduplicated(drink);
+    var allIngredientNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var cocktails = new List<SeedCocktail>();
 
-    foreach (var (name, _) in ingredients)
-        if (!string.IsNullOrWhiteSpace(name))
-            allIngredientNames.Add(name.Trim());
-
-    cocktails.Add(new SeedCocktail
+    foreach (var id in ids)
     {
-        Name = drink.StrDrink,
-        Description = drink.StrCategory,
-        Instructions = drink.StrInstructions ?? "",
-        ImageUrl = drink.StrDrinkThumb,
-        CountryId = countryId,
-        Ingredients = ingredients.Select(x => new SeedCocktailIngredient { Name = x.Name.Trim(), Measure = x.Measure }).ToList()
-    });
+        await Task.Delay(200);
+        var detail = await client.LookupCocktailAsync(id);
+        var drink = detail?.Drinks?.FirstOrDefault();
+        if (drink == null || string.IsNullOrEmpty(drink.StrDrink)) continue;
 
-    Console.WriteLine($"Fetched {cocktails.Count}/{ids.Count}: {drink.StrDrink}");
+        var countryId = ResolveCountryId(drink, random);
+        var ingredients = GetIngredientMeasuresDeduplicated(drink);
+
+        foreach (var (name, _) in ingredients)
+            if (!string.IsNullOrWhiteSpace(name))
+                allIngredientNames.Add(name.Trim());
+
+        cocktails.Add(new SeedCocktail
+        {
+            Name = drink.StrDrink,
+            Description = drink.StrCategory,
+            Instructions = drink.StrInstructions ?? "",
+            ImageUrl = drink.StrDrinkThumb,
+            CountryId = countryId,
+            Ingredients = ingredients.Select(x => new SeedCocktailIngredient { Name = x.Name.Trim(), Measure = x.Measure }).ToList()
+        });
+
+        Console.WriteLine($"Fetched {cocktails.Count}/{ids.Count}: {drink.StrDrink}");
+    }
+
+    seedData = new SeedDataRoot
+    {
+        Version = 1,
+        GeneratedAt = DateTime.UtcNow.ToString("O"),
+        Ingredients = allIngredientNames.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList(),
+        Cocktails = cocktails
+    };
+
+    await using var fs = File.Create(outputPath);
+    await JsonSerializer.SerializeAsync(fs, seedData, new JsonSerializerOptions { WriteIndented = true });
+    Console.WriteLine($"\nWrote {seedData.Cocktails.Count} cocktails and {seedData.Ingredients.Count} ingredients to {outputPath}");
 }
 
-var seedData = new SeedDataRoot
+Console.WriteLine($"Loaded {seedData.Cocktails.Count} cocktails and {seedData.Ingredients.Count} ingredients.");
+
+// ── Translation generation ─────────────────────────────────────────────────
+
+var translationsPath = SeedDataPath("cocktails-translations.json");
+TranslationDataRoot? existingRoot = null;
+if (File.Exists(translationsPath))
 {
-    Version = 1,
-    GeneratedAt = DateTime.UtcNow.ToString("O"),
-    Ingredients = allIngredientNames.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList(),
-    Cocktails = cocktails
-};
+    var existingJson = await File.ReadAllTextAsync(translationsPath);
+    if (!string.IsNullOrWhiteSpace(existingJson))
+        existingRoot = JsonSerializer.Deserialize<TranslationDataRoot>(existingJson);
+}
 
-var outputPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "CocktailHub.Infrastructure", "SeedData", "cocktails.json"));
-var dir = Path.GetDirectoryName(outputPath)!;
-Directory.CreateDirectory(dir);
+var alreadyTranslatedCocktails = existingRoot?.Cocktails
+    .Where(x => !String.Equals(x.Translations[0].Name, x.Translations[1].Name))
+    .Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+var alreadyTranslatedIngredients = existingRoot?.Ingredients
+    .Where(x => !String.Equals(x.Translations[0].Name, x.Translations[1].Name))
+    .Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-await using var fs = File.Create(outputPath);
-await JsonSerializer.SerializeAsync(fs, seedData, new JsonSerializerOptions { WriteIndented = true });
+var cocktailEntries = existingRoot?.Cocktails.ToList() ?? new List<CocktailTranslationEntry>();
+var ingredientEntries = existingRoot?.Ingredients.ToList() ?? new List<IngredientTranslationEntry>();
 
-Console.WriteLine($"\nWrote {cocktails.Count} cocktails and {allIngredientNames.Count} ingredients to {outputPath}");
+var translationHttp = new HttpClient();
+var translator = new TranslationService(translationHttp, translationEmail);
+
+var pendingCocktails = seedData.Cocktails.Where(c => !alreadyTranslatedCocktails.Contains(c.Name)).ToList();
+var pendingIngredients = seedData.Ingredients.Where(n => !alreadyTranslatedIngredients.Contains(n)).ToList();
+
+Console.WriteLine($"\nTranslating {pendingCocktails.Count} new cocktails and {pendingIngredients.Count} new ingredients into {string.Join(", ", langs)}...");
+if (string.IsNullOrWhiteSpace(translationEmail))
+    Console.WriteLine("No email provided — using anonymous limit (5,000 chars/day). Pass email as 2nd arg for 50,000 chars/day.");
+
+var done = 0;
+foreach (var cocktail in pendingCocktails)
+{
+    var langEntries = new List<CocktailLangEntry>();
+    var errorOccured = false;
+    foreach (var lang in langs)
+    {
+        var name = await translator.TranslateAsync(cocktail.Name, "en", lang) ?? cocktail.Name;
+        if (String.Equals(name, TranslationService.ERROR_STRING, StringComparison.OrdinalIgnoreCase))
+        {
+            errorOccured = true;
+            break; // Skip further translations for this cocktail if name translation failed
+        }
+        await Task.Delay(600);
+        var desc = string.IsNullOrWhiteSpace(cocktail.Description) ? null
+            : await translator.TranslateAsync(cocktail.Description, "en", lang);
+        if (String.Equals(desc, TranslationService.ERROR_STRING, StringComparison.OrdinalIgnoreCase))
+        {
+            errorOccured = true;
+            break;
+        }
+        if (desc != null) await Task.Delay(600);
+        var instr = await translator.TranslateAsync(cocktail.Instructions, "en", lang) ?? cocktail.Instructions;
+        if (String.Equals(instr, TranslationService.ERROR_STRING, StringComparison.OrdinalIgnoreCase))
+        {
+            errorOccured = true;
+            break;
+        }
+        await Task.Delay(600);
+
+        langEntries.Add(new CocktailLangEntry
+        {
+            Lang = lang,
+            Name = name,
+            Description = desc,
+            Instructions = instr
+        });
+    }
+    if (errorOccured)
+    {
+        Console.WriteLine($"  Error occurred while translating '{cocktail.Name}' -> it seems tranlation resources are depleted — skipping all next cocktails.");
+        await SaveTranslationsAsync(translationsPath, cocktailEntries, ingredientEntries);
+        break;
+    }
+    var existingItem = cocktailEntries.FirstOrDefault(x => String.Equals(x.Name, cocktail.Name, StringComparison.OrdinalIgnoreCase));
+    if (existingItem != null)
+    {
+        cocktailEntries.Remove(existingItem);
+    }
+    cocktailEntries.Add(new CocktailTranslationEntry { Name = cocktail.Name, Translations = langEntries });
+    done++;
+
+    if (done % 10 == 0)
+    {
+        await SaveTranslationsAsync(translationsPath, cocktailEntries, ingredientEntries);
+        Console.WriteLine($"  Checkpoint saved ({done}/{pendingCocktails.Count} cocktails)");
+    }
+}
+
+done = 0;
+foreach (var ingName in pendingIngredients)
+{
+    var errorOccured = false;
+    var langEntries = new List<IngredientLangEntry>();
+    foreach (var lang in langs)
+    {
+        var translated = await translator.TranslateAsync(ingName, "en", lang) ?? ingName;
+        if (String.Equals(translated, TranslationService.ERROR_STRING, StringComparison.OrdinalIgnoreCase))
+        {
+            errorOccured = true;
+            break;
+        }
+        await Task.Delay(400);
+        langEntries.Add(new IngredientLangEntry { Lang = lang, Name = translated });
+    }
+    if (errorOccured)
+    {
+        Console.WriteLine($"  Error occurred while translating '{ingName}' -> it seems tranlation resources are depleted — skipping all next ingredients.");
+        await SaveTranslationsAsync(translationsPath, cocktailEntries, ingredientEntries);
+        break;
+    }
+    var existingItem = ingredientEntries.FirstOrDefault(x => String.Equals(x.Name, ingName, StringComparison.OrdinalIgnoreCase));
+    if (existingItem != null)
+    {
+        ingredientEntries.Remove(existingItem);
+    }
+    ingredientEntries.Add(new IngredientTranslationEntry { Name = ingName, Translations = langEntries });
+    done++;
+
+    if (done % 20 == 0)
+    {
+        await SaveTranslationsAsync(translationsPath, cocktailEntries, ingredientEntries);
+        Console.WriteLine($"  Checkpoint saved ({done}/{pendingIngredients.Count} ingredients)");
+    }
+}
+
+await SaveTranslationsAsync(translationsPath, cocktailEntries, ingredientEntries);
+Console.WriteLine($"\nTranslation file written to {translationsPath}");
 return;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+static async Task<string> ReadTranslationEmailAsync()
+{
+    var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+    if (!File.Exists(configPath)) return "";
+    var doc = JsonDocument.Parse(await File.ReadAllTextAsync(configPath));
+    return doc.RootElement.TryGetProperty("TranslationEmail", out var prop)
+        ? prop.GetString() ?? ""
+        : "";
+}
+
+static string SeedDataPath(string fileName) =>
+    Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+        "src", "CocktailHub.Infrastructure", "SeedData", fileName));
+
+static async Task SaveTranslationsAsync(string path, List<CocktailTranslationEntry> cocktails, List<IngredientTranslationEntry> ingredients)
+{
+    var root = new TranslationDataRoot
+    {
+        Version = 1,
+        GeneratedAt = DateTime.UtcNow.ToString("O"),
+        Cocktails = cocktails,
+        Ingredients = ingredients
+    };
+    await using var fs = File.Create(path);
+    await JsonSerializer.SerializeAsync(fs, root, new JsonSerializerOptions { WriteIndented = true });
+}
 
 static async Task<List<string>> CollectDrinkIdsAsync(TheCocktailDbClient client, int maxCocktails)
 {
@@ -158,7 +332,7 @@ static List<(string Name, string? Measure)> GetIngredientMeasuresDeduplicated(Dr
     {
         if (string.IsNullOrWhiteSpace(name)) continue;
         var n = name.Trim();
-        if (!seen.Add(n)) continue; // skip duplicate
+        if (!seen.Add(n)) continue;
         result.Add((n, string.IsNullOrWhiteSpace(measure) ? null : measure?.Trim()));
     }
     return result;
