@@ -95,6 +95,39 @@ public class CocktailsController : ControllerBase
         return Ok(new { items, total, page, pageSize });
     }
 
+    [HttpGet("cocktail-of-the-day")]
+    public async Task<IActionResult> GetCocktailOfTheDay([FromQuery] string? lang = "en", CancellationToken ct = default)
+    {
+        var langCode = lang is "uk" or "pl" ? lang : "en";
+        var total = await _db.Cocktails.CountAsync(c => c.IsModerated, ct);
+        if (total == 0) return NotFound();
+
+        var epoch = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var index = (int)(DateTimeOffset.UtcNow - epoch).TotalDays % total;
+
+        var cocktail = await _db.Cocktails
+            .Where(c => c.IsModerated)
+            .Include(c => c.Country)
+            .Include(c => c.Translations)
+            .OrderBy(c => c.Id)
+            .Skip(index)
+            .Take(1)
+            .FirstOrDefaultAsync(ct);
+
+        if (cocktail == null) return NotFound();
+
+        var tr = cocktail.Translations.FirstOrDefault(t => t.LangCode == langCode);
+        return Ok(new
+        {
+            cocktail.Id,
+            Name = tr?.Name ?? cocktail.Name,
+            Description = tr?.Description ?? cocktail.Description,
+            cocktail.ImageUrl,
+            cocktail.CountryId,
+            CountryName = cocktail.Country.Name
+        });
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id, [FromQuery] string? lang = "en", CancellationToken ct = default)
     {

@@ -11,7 +11,12 @@
     "addCocktail": "Dodaj koktajl"
   },
   "home": {
-    "title": "Cocktail Hub"
+    "title": "Cocktail Hub",
+    "tagline": "Twoje Ostateczne Miejsce dla Wszystkich Fanów Shakera i Lodu.",
+    "description": "Wejdź i podnieś swoje domowe bar na wyższy poziom. Niezależnie czy jesteś doświadczonym barmanem, czy dopiero zaczynasz — znajdziesz tu przepisy na każdy gust: od ponadczasowych klasyków po nowoczesne fuzje smakowe.",
+    "cocktailOfTheDay": "Koktajl dnia",
+    "viewRecipe": "Zobacz przepis",
+    "browseCocktails": "Przeglądaj koktajle"
   },
   "search": {
     "title": "Szukaj koktajli",

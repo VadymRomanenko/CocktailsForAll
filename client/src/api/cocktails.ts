@@ -55,6 +55,20 @@ export function fetchCocktailById(id: number, lang?: string) {
   return apiGet<CocktailDetail>(`/cocktails/${id}${sp}`);
 }
 
+export interface CocktailOfTheDay {
+  id: number;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  countryId: number;
+  countryName: string;
+}
+
+export function fetchCocktailOfTheDay(lang?: string) {
+  const sp = lang ? `?lang=${lang}` : '';
+  return apiGet<CocktailOfTheDay>(`/cocktails/cocktail-of-the-day${sp}`);
+}
+
 export function createCocktail(data: {
   name: string;
   description?: string;

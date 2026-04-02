@@ -11,7 +11,12 @@
     "addCocktail": "Add Cocktail"
   },
   "home": {
-    "title": "Cocktail Hub"
+    "title": "Welcome to Cocktail Hub",
+    "tagline": "Your Ultimate Destination for Shaken, Stirred, and Everything In Between.",
+    "description": "Step inside and elevate your home bar experience. Whether you're a seasoned mixologist or a curious beginner, you've found your new favorite haunt. We've curated an extensive library of recipes — from timeless classics that defined eras to modern fusions that push the boundaries of flavor.",
+    "cocktailOfTheDay": "Cocktail of the Day",
+    "viewRecipe": "View Recipe",
+    "browseCocktails": "Browse Cocktails"
   },
   "search": {
     "title": "Search Cocktails",
