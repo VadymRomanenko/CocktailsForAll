@@ -2,6 +2,7 @@ using System.Security.Claims;
 using CocktailHub.Api.DTOs.Cocktail;
 using CocktailHub.Core.Entities;
 using CocktailHub.Infrastructure.Data;
+using CocktailHub.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,12 @@ namespace CocktailHub.Api.Controllers;
 public class CocktailsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly OpenAiService _openAi;
 
-    public CocktailsController(AppDbContext db)
+    public CocktailsController(AppDbContext db, OpenAiService openAi)
     {
         _db = db;
+        _openAi = openAi;
     }
 
     private int? UserId => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
@@ -155,6 +158,51 @@ public class CocktailsController : ControllerBase
             cocktail.Id, name, description, instructions,
             cocktail.ImageUrl, cocktail.CountryId, cocktail.Country.Name, cocktail.IsModerated,
             isFav, ingredients));
+    }
+
+    [HttpGet("{id:int}/extended-description")]
+    public async Task<IActionResult> GetExtendedDescription(
+        int id, [FromQuery] string? lang = "en", CancellationToken ct = default)
+    {
+        var langCode = lang is "uk" or "pl" ? lang : "en";
+
+        var cocktail = await _db.Cocktails
+            .Include(c => c.Translations)
+            .FirstOrDefaultAsync(c => c.Id == id && c.IsModerated, ct);
+
+        if (cocktail == null) return NotFound();
+
+        var translation = cocktail.Translations.FirstOrDefault(t => t.LangCode == langCode)
+                          ?? cocktail.Translations.FirstOrDefault(t => t.LangCode == "en");
+
+        // Return cached value if already generated
+        if (translation != null && !string.IsNullOrWhiteSpace(translation.ExtendedDescription))
+            return Ok(new { content = translation.ExtendedDescription });
+
+        if (!_openAi.IsConfigured)
+            return StatusCode(503, new { message = "OpenAI is not configured" });
+
+        // English name is needed for the prompt regardless of requested lang
+        var enName = cocktail.Translations.FirstOrDefault(t => t.LangCode == "en")?.Name ?? cocktail.Name;
+        var descriptions = await _openAi.GenerateExtendedDescriptionAsync(enName, ct);
+
+        if (descriptions == null)
+            return StatusCode(502, new { message = "Failed to generate description" });
+
+        // Persist all received lang versions
+        foreach (var (langKey, html) in descriptions)
+        {
+            var tr = cocktail.Translations.FirstOrDefault(t => t.LangCode == langKey);
+            if (tr != null)
+                tr.ExtendedDescription = html;
+        }
+        await _db.SaveChangesAsync(ct);
+
+        var content = descriptions.GetValueOrDefault(langCode)
+                      ?? descriptions.GetValueOrDefault("en")
+                      ?? descriptions.Values.First();
+
+        return Ok(new { content });
     }
 
     [HttpPost]
