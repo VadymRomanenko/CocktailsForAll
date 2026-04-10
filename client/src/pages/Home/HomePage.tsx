@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 /* import { CocktailCard } from '../../components/CocktailCard';
 import { CountryFilter } from '../../components/CountryFilter'; */
-import { fetchCocktails, fetchCocktailOfTheDay } from '../../api/cocktails';
+import { fetchCocktails, fetchCocktailOfTheDay, fetchExtendedDescription } from '../../api/cocktails';
 import type { CocktailOfTheDay } from '../../api/cocktails';
 import { fetchCountries } from '../../api/countries';
 import { addFavorite, removeFavorite, getMyFavorites } from '../../api/favorites';
@@ -18,6 +18,8 @@ export function HomePage() {
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [cocktailOfTheDay, setCocktailOfTheDay] = useState<CocktailOfTheDay | null>(null);
+  const [extendedDescription, setExtendedDescription] = useState<string | null>(null);
+  const [extDescLoading, setExtDescLoading] = useState(false);
   const { isAuthenticated } = useAuth();
 
   /* useEffect(() => {
@@ -25,8 +27,20 @@ export function HomePage() {
   }, []); */
 
   useEffect(() => {
+    setCocktailOfTheDay(null);
+    setExtendedDescription(null);
     fetchCocktailOfTheDay(i18n.language).then(setCocktailOfTheDay);
   }, [i18n.language]);
+
+  useEffect(() => {
+    if (!cocktailOfTheDay) return;
+    setExtendedDescription(null);
+    setExtDescLoading(true);
+    fetchExtendedDescription(cocktailOfTheDay.id, i18n.language)
+      .then((r) => setExtendedDescription(r.content))
+      .catch(() => setExtendedDescription(null))
+      .finally(() => setExtDescLoading(false));
+  }, [cocktailOfTheDay?.id, i18n.language]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -88,6 +102,7 @@ export function HomePage() {
             <span>✨</span>
             {t('home.cocktailOfTheDay')}
           </h2>
+
           <Link
             to={`/cocktail/${cocktailOfTheDay.id}`}
             className="flex flex-col sm:flex-row rounded-2xl overflow-hidden bg-amber-900/50 border border-amber-600/50 hover:border-amber-500/70 transition-colors group"
@@ -118,6 +133,25 @@ export function HomePage() {
               </span>
             </div>
           </Link>
+
+          {/* Extended description */}
+          <div className="mt-4 rounded-2xl bg-amber-900/30 border border-amber-700/30 px-6 py-5 min-h-[6rem]">
+            {extDescLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <span className="inline-block w-7 h-7 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
+              </div>
+            ) : extendedDescription ? (
+              <div
+                className="text-amber-200/80 text-sm leading-relaxed space-y-2
+                  [&_h3]:text-amber-300 [&_h3]:font-semibold [&_h3]:text-base [&_h3]:mb-1
+                  [&_strong]:text-amber-200 [&_strong]:font-semibold
+                  [&_em]:text-amber-300/80
+                  [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
+                  [&_p]:mb-1"
+                dangerouslySetInnerHTML={{ __html: extendedDescription }}
+              />
+            ) : null}
+          </div>
         </section>
       )}
 

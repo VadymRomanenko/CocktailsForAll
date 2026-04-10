@@ -69,6 +69,11 @@ export function fetchCocktailOfTheDay(lang?: string) {
   return apiGet<CocktailOfTheDay>(`/cocktails/cocktail-of-the-day${sp}`);
 }
 
+export function fetchExtendedDescription(id: number, lang?: string) {
+  const sp = lang ? `?lang=${lang}` : '';
+  return apiGet<{ content: string }>(`/cocktails/${id}/extended-description${sp}`);
+}
+
 export function createCocktail(data: {
   name: string;
   description?: string;
