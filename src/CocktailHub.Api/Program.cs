@@ -3,7 +3,6 @@ using CocktailHub.Api.Options;
 using CocktailHub.Api.Services;
 using CocktailHub.Infrastructure.Data;
 using CocktailHub.Infrastructure.Options;
-using Microsoft.Data.Sqlite;
 using CocktailHub.Infrastructure.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -15,9 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<CocktailHubOptions>(builder.Configuration.GetSection("CocktailHub"));
-builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
 
-var databaseProvider = builder.Configuration[$"{DatabaseOptions.SectionName}:Provider"] ?? "Postgres";
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Postgres";
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -103,10 +101,16 @@ app.Run();
 
 static void EnsureSqliteDatabaseDirectory(string connectionString)
 {
-    var builder = new SqliteConnectionStringBuilder(connectionString);
-    if (string.IsNullOrEmpty(builder.DataSource))
+    const string prefix = "Data Source=";
+    var idx = connectionString.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+    if (idx < 0)
         return;
-    var dir = Path.GetDirectoryName(Path.GetFullPath(builder.DataSource));
+    var path = connectionString[(idx + prefix.Length)..].Trim();
+    if (path.Length >= 2 && path[0] == '"' && path[^1] == '"')
+        path = path[1..^1];
+    if (string.IsNullOrEmpty(path))
+        return;
+    var dir = Path.GetDirectoryName(Path.GetFullPath(path));
     if (!string.IsNullOrEmpty(dir))
         Directory.CreateDirectory(dir);
 }
