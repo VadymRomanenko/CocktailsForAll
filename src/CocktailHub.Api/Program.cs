@@ -3,6 +3,7 @@ using CocktailHub.Api.Options;
 using CocktailHub.Api.Services;
 using CocktailHub.Infrastructure.Data;
 using CocktailHub.Infrastructure.Options;
+using Microsoft.Data.Sqlite;
 using CocktailHub.Infrastructure.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -14,12 +15,32 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<CocktailHubOptions>(builder.Configuration.GetSection("CocktailHub"));
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+
+var databaseProvider = builder.Configuration[$"{DatabaseOptions.SectionName}:Provider"] ?? "Postgres";
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+    switch (databaseProvider.ToLowerInvariant())
+    {
+        case "sqlite":
+            EnsureSqliteDatabaseDirectory(connectionString);
+            options.UseSqlite(connectionString);
+            break;
+        case "postgres":
+        case "postgresql":
+            options.UseNpgsql(connectionString);
+            break;
+        default:
+            throw new InvalidOperationException(
+                $"Database:Provider must be Postgres or Sqlite (got '{databaseProvider}').");
+    }
+});
 builder.Services.AddHttpClient<TheCocktailDbClient>();
 builder.Services.AddHttpClient<TranslationService>();
 builder.Services.AddHttpClient<OpenAiService>();
@@ -57,7 +78,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+        await db.Database.EnsureCreatedAsync();
+    else
+        await db.Database.MigrateAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<CocktailDbSeeder>();
     await seeder.SeedAsync();
     await seeder.ApplyTranslationsFromFileAsync();
@@ -76,3 +100,13 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static void EnsureSqliteDatabaseDirectory(string connectionString)
+{
+    var builder = new SqliteConnectionStringBuilder(connectionString);
+    if (string.IsNullOrEmpty(builder.DataSource))
+        return;
+    var dir = Path.GetDirectoryName(Path.GetFullPath(builder.DataSource));
+    if (!string.IsNullOrEmpty(dir))
+        Directory.CreateDirectory(dir);
+}

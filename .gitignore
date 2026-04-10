@@ -40,6 +40,9 @@ ScaffoldingReadMe.txt
 .vs/
 .idea/
 
+# Local SQLite files (Database:Provider = Sqlite)
+*.db
+
 # Others
 ~$*
 *~
