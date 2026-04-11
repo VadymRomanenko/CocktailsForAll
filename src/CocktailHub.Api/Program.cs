@@ -15,11 +15,30 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<CocktailHubOptions>(builder.Configuration.GetSection("CocktailHub"));
 
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Postgres";
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+    switch (databaseProvider.ToLowerInvariant())
+    {
+        case "sqlite":
+            EnsureSqliteDatabaseDirectory(connectionString);
+            options.UseSqlite(connectionString);
+            break;
+        case "postgres":
+        case "postgresql":
+            options.UseNpgsql(connectionString);
+            break;
+        default:
+            throw new InvalidOperationException(
+                $"Database:Provider must be Postgres or Sqlite (got '{databaseProvider}').");
+    }
+});
 builder.Services.AddHttpClient<TheCocktailDbClient>();
 builder.Services.AddHttpClient<TranslationService>();
 builder.Services.AddHttpClient<OpenAiService>();
@@ -57,7 +76,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+        await db.Database.EnsureCreatedAsync();
+    else
+        await db.Database.MigrateAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<CocktailDbSeeder>();
     await seeder.SeedAsync();
     await seeder.ApplyTranslationsFromFileAsync();
@@ -76,3 +98,19 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static void EnsureSqliteDatabaseDirectory(string connectionString)
+{
+    const string prefix = "Data Source=";
+    var idx = connectionString.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+    if (idx < 0)
+        return;
+    var path = connectionString[(idx + prefix.Length)..].Trim();
+    if (path.Length >= 2 && path[0] == '"' && path[^1] == '"')
+        path = path[1..^1];
+    if (string.IsNullOrEmpty(path))
+        return;
+    var dir = Path.GetDirectoryName(Path.GetFullPath(path));
+    if (!string.IsNullOrEmpty(dir))
+        Directory.CreateDirectory(dir);
+}
