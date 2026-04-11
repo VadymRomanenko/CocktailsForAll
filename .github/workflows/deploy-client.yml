@@ -1,0 +1,60 @@
+# Deploy the Vite + React client to Azure Static Web Apps.
+#
+# === GitHub secrets (Settings → Secrets and variables → Actions) ===
+#   AZURE_STATIC_WEB_APPS_API_TOKEN
+#     Azure Portal → your Static Web App → Manage deployment token → copy value.
+#     (Created when you link the repo, or from Overview → Manage deployment token.)
+#   VITE_API_BASE_URL
+#     Your App Service API URL without a trailing slash, e.g.
+#     https://cocktailshub-abfme9fufrfgbjar.westeurope-01.azurewebsites.net
+#
+# === After first deploy ===
+#   Add your Static Web App URL to the API app settings:
+#     Cors__AllowedOrigins__0 = https://<your-app>.azurestaticapps.net
+
+name: Deploy client to Azure Static Web Apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - '.github/workflows/deploy-client.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-client-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Build and deploy
+    env:
+      VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Build and deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: client
+          api_location: ''
+          output_location: dist
+          app_build_command: npm ci && npm run build
