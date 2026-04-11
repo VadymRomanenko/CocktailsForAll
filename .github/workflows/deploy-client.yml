@@ -1,9 +1,10 @@
 # Deploy the Vite + React client to Azure Static Web Apps.
 #
 # === GitHub secrets (Settings → Secrets and variables → Actions) ===
-#   AZURE_STATIC_WEB_APPS_API_TOKEN
-#     Azure Portal → your Static Web App → Manage deployment token → copy value.
-#     (Created when you link the repo, or from Overview → Manage deployment token.)
+#   AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_FOREST_0B6614703
+#     Azure creates this secret name when you connect the repo (see auto-generated workflow).
+#     If you create a different Static Web App, the suffix changes — copy the token secret name from Azure’s yml.
+#     Same token value: Portal → Static Web App → Manage deployment token.
 #   VITE_API_BASE_URL
 #     Your App Service API URL without a trailing slash, e.g.
 #     https://cocktailshub-abfme9fufrfgbjar.westeurope-01.azurewebsites.net
@@ -51,7 +52,7 @@ jobs:
       - name: Build and deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_FOREST_0B6614703 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: client
