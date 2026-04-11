@@ -3,11 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 /* import { CocktailCard } from '../../components/CocktailCard';
 import { CountryFilter } from '../../components/CountryFilter'; */
-import { fetchCocktails, fetchCocktailOfTheDay, fetchExtendedDescription } from '../../api/cocktails';
+import { fetchCocktailOfTheDay, fetchExtendedDescription } from '../../api/cocktails';
 import type { CocktailOfTheDay } from '../../api/cocktails';
-import { fetchCountries } from '../../api/countries';
-import { addFavorite, removeFavorite, getMyFavorites } from '../../api/favorites';
-import { useAuth } from '../../context/AuthContext';
 /* import type { Country } from '../../api/countries'; */
 
 export function HomePage() {
@@ -15,12 +12,9 @@ export function HomePage() {
   /* const [cocktails, setCocktails] = useState<Awaited<ReturnType<typeof fetchCocktails>> | null>(null);
   const [countries, setCountries] = useState<Country[]>([]); */
   /* const [countryId, setCountryId] = useState<number | ''>(''); */
-  const [page, setPage] = useState(1);
-  const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [cocktailOfTheDay, setCocktailOfTheDay] = useState<CocktailOfTheDay | null>(null);
   const [extendedDescription, setExtendedDescription] = useState<string | null>(null);
   const [extDescLoading, setExtDescLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
 
   /* useEffect(() => {
     fetchCountries({ showNonEmptyOnly: true, showCoctailCountsInName: true }).then(setCountries);
@@ -41,12 +35,6 @@ export function HomePage() {
       .catch(() => setExtendedDescription(null))
       .finally(() => setExtDescLoading(false));
   }, [cocktailOfTheDay?.id, i18n.language]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      getMyFavorites().then((ids) => setFavorites(new Set(ids)));
-    }
-  }, [isAuthenticated]);
 
   /* useEffect(() => {
     fetchCocktails({
