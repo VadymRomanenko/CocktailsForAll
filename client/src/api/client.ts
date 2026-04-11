@@ -1,5 +1,10 @@
 const getToken = () => localStorage.getItem('token');
 
+/** Production API origin (no trailing slash). Empty = same origin / Vite dev proxy. */
+function apiOrigin(): string {
+  return (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/$/, '');
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {}
@@ -12,7 +17,9 @@ export async function api<T>(
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
-  const res = await fetch(`/api${path}`, { ...options, headers });
+  const base = apiOrigin();
+  const url = base === '' ? `/api${path}` : `${base}/api${path}`;
+  const res = await fetch(url, { ...options, headers });
   console.log('api', res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
