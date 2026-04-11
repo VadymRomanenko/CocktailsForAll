@@ -2,17 +2,8 @@
 #
 # === GitHub secrets (Settings → Secrets and variables → Actions) ===
 #   AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_FOREST_0B6614703
-#     Azure creates this secret name when you connect the repo (see auto-generated workflow).
-#     If you create a different Static Web App, the suffix changes — copy the token secret name from Azure’s yml.
-#     Same token value: Portal → Static Web App → Manage deployment token.
-#   VITE_API_BASE_URL
-#     Your App Service API URL without a trailing slash, e.g.
-#     https://cocktailshub-abfme9fufrfgbjar.westeurope-01.azurewebsites.net
+#   VITE_API_BASE_URL — API base URL, no trailing slash (see checklist in team docs / Azure section).
 #
-# === After first deploy ===
-#   Add your Static Web App URL to the API app settings:
-#     Cors__AllowedOrigins__0 = https://<your-app>.azurestaticapps.net
-
 name: Deploy client to Azure Static Web Apps
 
 on:
@@ -35,8 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Build and deploy
-    env:
-      VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
     steps:
       - name: Checkout
@@ -49,7 +38,14 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: Build and deploy
+      # Build here so VITE_* is guaranteed (Oryx inside SWA deploy often does not see job env).
+      - name: Install and build
+        working-directory: client
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: npm ci && npm run build
+
+      - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_FOREST_0B6614703 }}
@@ -58,4 +54,4 @@ jobs:
           app_location: client
           api_location: ''
           output_location: dist
-          app_build_command: npm ci && npm run build
+          skip_app_build: true
