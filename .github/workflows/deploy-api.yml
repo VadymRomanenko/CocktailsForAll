@@ -1,0 +1,88 @@
+# Deploy CocktailHub.Api to Azure App Service (ZIP deploy).
+#
+# === GitHub repository secrets (Settings → Secrets and variables → Actions) ===
+#   AZURE_WEBAPP_NAME
+#     Azure Portal → App Service → name at the top (e.g. cocktailhub-api).
+#   AZURE_WEBAPP_PUBLISH_PROFILE
+#     App Service → Get publish profile → download .PublishSettings → paste entire XML as secret value.
+#
+# === Azure App Service → Environment variables → App settings (set in portal, not in this file) ===
+#   Database__Provider              Sqlite
+#   ConnectionStrings__DefaultConnection   Data Source=/home/site/wwwroot/data/cocktailhub.db
+#   Jwt__Key                        <long random secret, 32+ chars>
+#   Jwt__Issuer                     CocktailHub
+#   Jwt__Audience                   CocktailHub
+#   Cors__AllowedOrigins__0         https://<your-static-web-app>.azurestaticapps.net
+#   Cors__AllowedOrigins__1         http://localhost:5173
+#   CocktailHub__OpenAiApiKey       sk-...   (optional)
+#   CocktailHub__SeedTranslations   false
+#   ASPNETCORE_ENVIRONMENT          Production
+#
+# === Optional ===
+#   GitHub Environment named "production" (Settings → Environments) if you uncomment `environment:` below.
+
+name: Deploy API to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/CocktailHub.Api/**'
+      - 'src/CocktailHub.Core/**'
+      - 'src/CocktailHub.Infrastructure/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_NOLOGO: true
+  PROJECT_PATH: src/CocktailHub.Api/CocktailHub.Api.csproj
+  PUBLISH_DIR: publish
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Publish
+        run: >
+          dotnet publish ${{ env.PROJECT_PATH }}
+          -c Release
+          -o ${{ env.PUBLISH_DIR }}
+          --no-restore
+          --verbosity minimal
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.PUBLISH_DIR }}
