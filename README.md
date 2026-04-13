@@ -52,3 +52,8 @@ Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
 - Favorites (requires login)
 - Create new cocktails (moderation required)
 - Admin moderation of pending cocktails
+
+### 4. Online
+
+Now this colution is online under address 'https://www.cocktailhub.store/"
+Hosted on Azure, DB switched to SQLite

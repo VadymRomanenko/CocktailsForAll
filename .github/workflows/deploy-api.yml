@@ -12,8 +12,9 @@
 #   Jwt__Key                        <long random secret, 32+ chars>
 #   Jwt__Issuer                     CocktailHub
 #   Jwt__Audience                   CocktailHub
-#   Cors__AllowedOrigins__0         https://<your-static-web-app>.azurestaticapps.net
-#   Cors__AllowedOrigins__1         http://localhost:5173
+#   Cors__AllowedOrigins__0         https://your-frontend.example.com  (exact browser origin: scheme + host, no path; add __1, __2 for extra origins)
+#   Cors__AllowedOrigins__1         http://localhost:5173   (optional; local dev calling prod API)
+#   When the frontend moves to a new domain, add or replace these entries and Save — no redeploy required.
 #   CocktailHub__OpenAiApiKey       sk-...   (optional)
 #   CocktailHub__SeedTranslations   false
 #   ASPNETCORE_ENVIRONMENT          Production

@@ -10,12 +10,16 @@ export async function api<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getToken();
+  const method = (options.method ?? 'GET').toUpperCase();
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
     ...options.headers,
   };
+  const h = headers as Record<string, string>;
+  if (method !== 'GET' && method !== 'HEAD' && h['Content-Type'] === undefined) {
+    h['Content-Type'] = 'application/json';
+  }
   if (token) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    h['Authorization'] = `Bearer ${token}`;
   }
   const base = apiOrigin();
   const url = base === '' ? `/api${path}` : `${base}/api${path}`;
