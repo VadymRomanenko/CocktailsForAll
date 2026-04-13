@@ -55,5 +55,5 @@ Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
 
 ### 4. Online
 
-Now this colution is online under address 'https://www.cocktailhub.store/"
+Now this colution is online under address https://www.cocktailhub.store/
 Hosted on Azure, DB switched to SQLite
