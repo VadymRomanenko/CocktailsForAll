@@ -44,7 +44,12 @@
     "email": "Email",
     "password": "Hasło",
     "noAccount": "Nie masz konta?",
-    "haveAccount": "Masz już konto?"
+    "haveAccount": "Masz już konto?",
+    "passwordRules": {
+      "minLength": "Co najmniej 6 znaków",
+      "uppercase": "Jedna wielka litera",
+      "lowercase": "Jedna mała litera"
+    }
   },
   "profile": {
     "title": "Profil",
