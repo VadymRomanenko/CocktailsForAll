@@ -6,6 +6,7 @@ import { addFavorite, removeFavorite } from '../../api/favorites';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import type { CocktailDetail } from '../../api/cocktails';
+import { decode } from 'html-entities';
 
 export function CocktailDetailPage() {
   const { t, i18n } = useTranslation();
@@ -21,6 +22,18 @@ export function CocktailDetailPage() {
       setIsFavorite(c.isFavorite);
     });
   }, [id, i18n.language]);
+
+  /** Decodes %XX URL encoding, then HTML entities (&amp; etc.). html-entities alone does not handle %20. */
+  const decodeStr = (str: string) => {
+    let s = str;
+    try {
+      s = decodeURIComponent(s);
+    } catch {
+      return str;
+    }
+    
+    return s;
+  };
 
   const toggleFavorite = async () => {
     if (!isAuthenticated || !cocktail) return;
@@ -50,7 +63,7 @@ export function CocktailDetailPage() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-amber-50 truncate">{cocktail.name}</h1>
+          <h1 className="text-2xl font-bold text-amber-50 truncate">{decodeStr(cocktail.name)}</h1>
           <div className="flex items-center gap-2">
           <p className="text-amber-300">{cocktail.countryName}</p>
           {!cocktail.isModerated && (
@@ -70,14 +83,14 @@ export function CocktailDetailPage() {
         </div>
       </div>
       {cocktail.description && (
-        <p className="mt-4 text-amber-200/90">{cocktail.description}</p>
+        <p className="mt-4 text-amber-200/90">{decodeStr(cocktail.description)}</p>
       )}
       <section className="mt-6">
         <h2 className="text-lg font-semibold text-amber-50 mb-2">{t('cocktail.ingredients')}</h2>
         <ul className="space-y-1">
           {cocktail.ingredients.map((ing) => (
             <li key={ing.ingredientId} className="text-amber-200">
-              {ing.ingredientName}
+              {decodeStr(ing.ingredientName)}
               {ing.measure ? ` — ${ing.measure}` : ''}
             </li>
           ))}
@@ -85,7 +98,7 @@ export function CocktailDetailPage() {
       </section>
       <section className="mt-6">
         <h2 className="text-lg font-semibold text-amber-50 mb-2">{t('cocktail.instructions')}</h2>
-        <p className="text-amber-200/90 whitespace-pre-wrap">{cocktail.instructions}</p>
+        <p className="text-amber-200/90 whitespace-pre-wrap">{decodeStr(cocktail.instructions)}</p>
       </section>
     </div>
   );
