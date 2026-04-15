@@ -6,7 +6,6 @@ import { addFavorite, removeFavorite } from '../../api/favorites';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import type { CocktailDetail } from '../../api/cocktails';
-import { decode } from 'html-entities';
 
 export function CocktailDetailPage() {
   const { t, i18n } = useTranslation();
@@ -23,7 +22,7 @@ export function CocktailDetailPage() {
     });
   }, [id, i18n.language]);
 
-  /** Decodes %XX URL encoding, then HTML entities (&amp; etc.). html-entities alone does not handle %20. */
+  /** Decodes %XX URL encoding (e.g. %20 → space). */
   const decodeStr = (str: string) => {
     let s = str;
     try {
@@ -54,6 +53,9 @@ export function CocktailDetailPage() {
 
   return (
     <div className="py-6">
+      <div className="mb-2 block md:hidden">
+        <h1 className="text-2xl font-bold text-amber-50">{decodeStr(cocktail.name)}</h1>
+      </div>
       <div className="flex gap-4">
         <div className="w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden bg-amber-950">
           {cocktail.imageUrl ? (
@@ -63,7 +65,7 @@ export function CocktailDetailPage() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-amber-50 truncate">{decodeStr(cocktail.name)}</h1>
+          <h1 className="text-2xl font-bold text-amber-50 truncate hidden md:block">{decodeStr(cocktail.name)}</h1>
           <div className="flex items-center gap-2">
           <p className="text-amber-300">{cocktail.countryName}</p>
           {!cocktail.isModerated && (
