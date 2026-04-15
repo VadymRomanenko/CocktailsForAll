@@ -44,7 +44,12 @@
     "email": "Email",
     "password": "Пароль",
     "noAccount": "Немає облікового запису?",
-    "haveAccount": "Вже є обліковий запис?"
+    "haveAccount": "Вже є обліковий запис?",
+    "passwordRules": {
+      "minLength": "Щонайменше 6 символів",
+      "uppercase": "Одна велика літера",
+      "lowercase": "Одна мала літера"
+    }
   },
   "profile": {
     "title": "Профіль",
